@@ -11,8 +11,8 @@ import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection._
 
-final case class Algorithm[A](name: String Refined NonEmpty, value: A)
-final case class Problem[A](name: String Refined NonEmpty, env: Env, eval: Eval[NonEmptyList, A])
+final case class Algorithm[A](name: String, value: A)
+final case class Problem[A](name: String, env: Env, eval: Eval[NonEmptyList, A])
 final case class Progress[A] private (algorithm: String,
                                       problem: String,
                                       seed: Long,
@@ -32,12 +32,11 @@ object Runner {
           alg.run(a)
       })
 
-  def staticAlgorithm[M[_]: Monad, F[_], A](name: String Refined NonEmpty,
-                                            a: Kleisli[M, F[A], F[A]]) =
+  def staticAlgorithm[M[_]: Monad, F[_], A](name: String, a: Kleisli[M, F[A], F[A]]) =
     Process.constant(Algorithm(name, a))
 
   def algorithm[M[_]: Monad, F[_]: Foldable1, A, B](
-      name: String Refined NonEmpty,
+      name: String,
       config: A,
       f: A => Kleisli[M, F[B], F[B]],
       updater: (A, Int @@ Iteration) => A): Process[Nothing, Algorithm[Kleisli[M, F[B], F[B]]]] = {
@@ -53,14 +52,12 @@ object Runner {
   }
 
   def staticProblem[S, A](
-      name: String Refined NonEmpty,
+      name: String,
       eval: Eval[NonEmptyList, A]
   ): Process[Task, Problem[A]] =
     Process.constant(Problem(name, Unchanged, eval))
 
-  def problem[S, A](name: String Refined NonEmpty,
-                    state: RVar[S],
-                    next: S => RVar[(S, Eval[NonEmptyList, A])])(
+  def problem[S, A](name: String, state: RVar[S], next: S => RVar[(S, Eval[NonEmptyList, A])])(
       env: Stream[Env],
       rng: RNG
   ): Process[Task, Problem[A]] = {

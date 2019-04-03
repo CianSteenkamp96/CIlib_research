@@ -66,6 +66,17 @@ package object io {
       .onComplete(Process.eval_(Task.delay(fileWriter.close())))
   }
 
+    def csvSinkAppend[A: EncodeCsv](file: java.io.File)(implicit A: EncodeCsv[Measurement[A]]): Sink[Task, Measurement[A]] = {
+    val fileWriter = new java.io.FileWriter(file, true)
+
+    sink
+        .lift { (input: Measurement[A]) =>
+          val encoded = A.encode(input)
+          Task.delay(fileWriter.write(encoded.mkString(",")))
+        }
+        .onComplete(Process.eval_(Task.delay(fileWriter.close())))
+  }
+
   def csvHeaderSink[A: EncodeCsv](file: java.io.File)(implicit A: EncodeCsv[Measurement[A]],
                                                       N: ColumnNameEncoder[Measurement[A]]): Sink[Task, Measurement[A]] = {
     val fileWriter = new java.io.PrintWriter(file)
