@@ -1,10 +1,9 @@
-package cilib
-package wfg
+package cilib.research.benchmarks.wfg
 
-import Misc._
-import TransFunctions._
+import cilib.research.benchmarks.wfg.Misc._
+import cilib.research.benchmarks.wfg.TransFunctions._
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
 object Transitions {
 

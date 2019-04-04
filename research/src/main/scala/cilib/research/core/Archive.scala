@@ -1,5 +1,4 @@
-package cilib
-package research
+package cilib.research.core
 
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.numeric.Positive

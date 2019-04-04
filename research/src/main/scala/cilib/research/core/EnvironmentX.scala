@@ -1,10 +1,10 @@
-package cilib
-package research
+package cilib.research.core
 
+import cilib._
+import cilib.exec._
+import cilib.research._
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
-import cilib.exec.{Problem, Runner}
-import cilib.research.research.placeholderENV
 import scalaz.concurrent.Task
 import scalaz.stream.Process
 import spire.math._

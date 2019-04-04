@@ -1,9 +1,8 @@
 package cilib
-package research
 
+import cilib.research.core.Archive
+import cilib.research.mgpso.MGParticle
 import scalaz._
-import Scalaz._
-import spire.math.Interval
 import spire.implicits._
 
 package object research {

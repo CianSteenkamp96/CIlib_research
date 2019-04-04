@@ -1,11 +1,10 @@
-package cilib
-package wfg
+package cilib.research.benchmarks.wfg
 
-import Misc._
-import FrameworkFunctions._
-import ShapesFunctions._
+import cilib.research.benchmarks.wfg.FrameworkFunctions._
+import cilib.research.benchmarks.wfg.Misc._
+import cilib.research.benchmarks.wfg.ShapesFunctions._
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
 object Shapes {
 

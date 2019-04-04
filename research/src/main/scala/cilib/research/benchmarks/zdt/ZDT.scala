@@ -1,10 +1,11 @@
-package cilib
-package zdt
+package cilib.research.benchmarks.zdt
 
-import research._
+import java.lang.Math._
+
+import cilib._
+import cilib.research.core.{ControlParameters, EnvironmentX}
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
-import Math._
 import spire.implicits._
 import spire.math.Interval
 

@@ -1,5 +1,5 @@
-import sbt._
 import sbt.Keys._
+import sbt._
 import sbtrelease.ReleaseStateTransformations._
 
 val scalazVersion     = "7.2.25"
@@ -88,7 +88,6 @@ lazy val commonSettings = Seq(
     |""".stripMargin,
   // MiMa related
   previousArtifactVersion := { // Can this be done nicer/safer?
-    import org.eclipse.jgit._
     import org.eclipse.jgit.api._
     import org.eclipse.jgit.lib.Constants
 
@@ -300,6 +299,19 @@ lazy val example = project
       fork in run := true,
       connectInput in run := true,
       moduleName := "cilib-example",
+      libraryDependencies ++= Seq(
+        "net.cilib" %% "benchmarks" % "0.1.1",
+        "org.scalaz" %% "scalaz-effect" % scalazVersion
+      )
+    ))
+
+lazy val research = project
+  .dependsOn(core, de, exec, ga, io, moo, pso)
+  .settings(
+    cilibSettings ++ noPublishSettings ++ Seq(
+      fork in run := true,
+      connectInput in run := true,
+      moduleName := "cilib-research",
       libraryDependencies ++= Seq(
         "net.cilib" %% "benchmarks" % "0.1.1",
         "org.scalaz" %% "scalaz-effect" % scalazVersion

@@ -1,8 +1,7 @@
-package cilib
-package research
-
-import research._
-import scalaz._
+package cilib.research.mgpso
+import cilib.research.MGArchive
+import cilib.{Step, StepS}
+import scalaz.StateT
 
 object MGStep {
 

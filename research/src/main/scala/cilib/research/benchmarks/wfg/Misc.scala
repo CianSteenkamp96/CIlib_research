@@ -1,8 +1,7 @@
-package cilib
-package wfg
+package cilib.research.benchmarks.wfg
 
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
 object Misc {
 

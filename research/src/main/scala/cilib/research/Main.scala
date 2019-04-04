@@ -1,11 +1,13 @@
 package cilib
 package research
 
-import cilib.zdt.ZDT._
-import cilib.wfg.WFG._
+import cilib.research.benchmarks.wfg.WFG._
+import cilib.research.benchmarks.zdt.ZDT._
+import cilib.research.mgpso.Lambda
+import cilib.research.simulation.Simulation
 import scalaz._
 
-object MGPSO {
+object Main {
 
   def main(args: Array[String]): Unit = {
 

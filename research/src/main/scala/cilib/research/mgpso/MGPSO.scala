@@ -1,13 +1,13 @@
-package cilib
-package research
-
-import research._
+package cilib.research.mgpso
+import cilib.research.MGArchive
+import cilib.research.core.{EnvironmentX, Position}
+import cilib.{Dist, RVar, Step, StepS}
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
-object MGPSOMethods {
+object MGPSO {
 
-  def multiEval(envX: EnvironmentX)(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
+  private def multiEval(envX: EnvironmentX)(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
     val fitness = if (particle.pos.isInbounds) {
       envX.f(particle.pos.pos)
     } else {
@@ -16,8 +16,8 @@ object MGPSOMethods {
     particle.updateFitness(fitness)
   }
 
-  def gbest(envX: EnvironmentX)(particle: MGParticle, collection: NonEmptyList[MGParticle]) =
-    MGStep.stepPure[Double, PositionX] {
+  private def gbest(envX: EnvironmentX)(particle: MGParticle, collection: NonEmptyList[MGParticle]) =
+    MGStep.stepPure[Double, Position] {
       val x = collection.toList
         .filter(x => x.swarmID == particle.swarmID)
         .sortWith((x, y) => envX.compareAtIndex(x.pb.fitness, y.pb.fitness, x.swarmID))
@@ -27,11 +27,11 @@ object MGPSOMethods {
       x
     }
 
-  def pbest(particle: MGParticle) = MGStep.stepPure[Double, PositionX] {
+  private def pbest(particle: MGParticle) = MGStep.stepPure[Double, Position] {
     particle.pb
   }
 
-  def updatePBest(envX: EnvironmentX)(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
+  private def updatePBest(envX: EnvironmentX)(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
     if (envX.compare(particle.pos.fitness, particle.pb.fitness)) {
       particle.updatePB
     } else {
@@ -39,17 +39,17 @@ object MGPSOMethods {
     }
   }
 
-  def updatePBestBounds(envX: EnvironmentX)(p: MGParticle): StepS[Double, MGArchive, MGParticle] =
+  private def updatePBestBounds(envX: EnvironmentX)(p: MGParticle): StepS[Double, MGArchive, MGParticle] =
     if (p.pos.isInbounds) updatePBest(envX)(p) else MGStep.stepPure[Double, MGParticle](p)
 
-  def calcVelocity(particle: MGParticle,
-                   social: PositionX,
-                   cognitive: PositionX,
+  private def calcVelocity(particle: MGParticle,
+                   social: Position,
+                   cognitive: Position,
                    w: Double,
                    c1: Double,
                    c2: Double,
                    c3: Double) =
-    MGStep.withArchive[Double, PositionX](archive => {
+    MGStep.withArchive[Double, Position](archive => {
       if (archive.isEmpty) {
         Step.liftR(
           for {
@@ -77,19 +77,19 @@ object MGPSOMethods {
       }
     })
 
-  def updateVelocity(particle: MGParticle, v: PositionX) = MGStep.stepPure[Double, MGParticle] {
+  private def updateVelocity(particle: MGParticle, v: Position) = MGStep.stepPure[Double, MGParticle] {
     particle.updateVelocity(v)
   }
 
-  def updateLambda(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
+  private def updateLambda(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
     particle.updateLambda
   }
 
-  def stdPosition(particle: MGParticle, v: PositionX) = MGStep.stepPure[Double, MGParticle] {
+  private def stdPosition(particle: MGParticle, v: Position) = MGStep.stepPure[Double, MGParticle] {
     particle.updatePos(particle.pos + v)
   }
 
-  def insertIntoArchive(particle: MGParticle) =
+  private def insertIntoArchive(particle: MGParticle) =
     MGStep.modifyArchive { archive =>
       archive.insert(particle)
     }

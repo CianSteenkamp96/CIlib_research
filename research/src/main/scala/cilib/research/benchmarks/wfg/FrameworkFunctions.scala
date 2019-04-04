@@ -1,10 +1,10 @@
-package cilib
-package wfg
+package cilib.research.benchmarks.wfg
 
-import Misc._
-import Math._
+import java.lang.Math._
+
+import cilib.research.benchmarks.wfg.Misc._
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
 object FrameworkFunctions {
 

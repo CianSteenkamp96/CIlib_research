@@ -1,26 +1,27 @@
-package cilib
-package research
+package cilib.research.simulation
 
 import java.io.File
 
-import cilib.exec.{Measurement, Progress, Runner}
 import cilib.exec.Runner.measure
+import cilib.exec.{Measurement, Progress, Runner}
 import cilib.io.csvSinkAppend
-import cilib.research.MGPSOMethods.mgpso
-import cilib.research.MGParticle._
-import cilib.research.research._
+import cilib.research.core.{Archive, EnvironmentX}
+import cilib.research.mgpso.MGParticle._
+import cilib.research.mgpso._
+import cilib.research.{MGArchive, _}
+import cilib.{Iteration, _}
+import eu.timepit.refined.auto._
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, merge}
-import eu.timepit.refined.auto._
 
 final case class Results(run: Int, archive: String)
 
 object Simulation {
 
   def runIO(environments: NonEmptyList[EnvironmentX],
-            strat: (Double, EnvironmentX) => Lambda,
+            strat: (Double, EnvironmentX) => mgpso.Lambda,
             iterations: Int,
     independentRuns: Int,
     stratName: String,
@@ -37,7 +38,7 @@ object Simulation {
   }
 
   def run(environments: NonEmptyList[EnvironmentX],
-          strat: (Double, EnvironmentX) => Lambda,
+          strat: (Double, EnvironmentX) => mgpso.Lambda,
           iterations: Int,
     independentRuns: Int,
     stratName: String,
@@ -55,7 +56,7 @@ object Simulation {
               Archive.bounded[MGParticle](50, Dominates.apply(env), CrowdingDistance.mostCrowded),
               rng,
               swarm,
-              Runner.staticAlgorithm(stratName, Iteration.syncS(mgpso(env))),
+              Runner.staticAlgorithm(stratName, Iteration.syncS(MGPSO.mgpso(env))),
               env.toStaticProblem,
               (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
             )

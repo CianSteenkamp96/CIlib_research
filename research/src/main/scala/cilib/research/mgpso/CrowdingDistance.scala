@@ -1,10 +1,9 @@
-package cilib
-package research
+package cilib.research.mgpso
 
-import scalaz._
-import Scalaz._
+import java.lang.Math.abs
 
-import Math._
+import cilib._
+import scalaz.Scalaz._
 
 object CrowdingDistance {
   def apply(collection: List[MGParticle], opt: Opt): MGParticle = {

@@ -1,5 +1,4 @@
-package cilib
-package wfg
+package cilib.research.benchmarks.wfg
 
 object Assert {
 

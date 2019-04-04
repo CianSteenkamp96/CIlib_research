@@ -1,18 +1,17 @@
-package cilib
-package wfg
+package cilib.research.benchmarks.wfg
 
+import cilib.research.core.{ControlParameters, EnvironmentX}
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
-import spire.math.Interval
 import spire.implicits._
-import research._
+import spire.math.Interval
 
 object WFG {
   val bounds = (0 until 30).toList.toNel.get.map(x => Interval(0.0, 2.0 * x + 1.0))
 
   def roundAt(p: Int)(n: Double): Double = {
     val s = math.pow(10, p)
-    (math.round(n * s)) / s
+    math.round(n * s) / s
   }
 
   def calcK(M: Int): Int = if (M == 2) 4 else 2 * (M - 1)

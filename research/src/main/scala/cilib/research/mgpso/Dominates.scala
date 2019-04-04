@@ -1,9 +1,6 @@
-package cilib
-package research
-
-import scalaz._
-import Scalaz._
-
+package cilib.research.mgpso
+import cilib.research.core.EnvironmentX
+import scalaz.Scalaz._
 object Dominates {
   def apply(envX: EnvironmentX)(particleA: MGParticle, particleB: MGParticle): Boolean =
     if (particleA.pos.fitness == particleB.pos.fitness) {

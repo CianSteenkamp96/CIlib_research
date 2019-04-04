@@ -1,9 +1,10 @@
-package cilib
-package research
+package cilib.research.mgpso
 
+import cilib.research.core._
+import cilib.{Dist, RNG, RVar}
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
-import spire.math.Interval
+
 
 case class Lambda(value: RVar[NonEmptyList[Double]],
                   next: RVar[NonEmptyList[Double]] => RVar[NonEmptyList[Double]]) {
@@ -59,63 +60,19 @@ object Lambda {
 
 }
 
-case class PositionX(pos: NonEmptyList[Double],
-                     bounds: NonEmptyList[Interval[Double]],
-                     fitness: NonEmptyList[Double]) {
-
-  def map(f: Double => Double): PositionX =
-    this.copy(pos = pos.map(f))
-
-  def traverse[G[_]: Applicative](f: Double => G[Double]): G[PositionX] =
-    pos.traverse(f).map(l => this.copy(pos = l))
-
-  def updateFitness(x: NonEmptyList[Double]) =
-    this.copy(fitness = x)
-
-  def zeroed: PositionX =
-    this.map(_ => 0.0)
-
-  def +(other: PositionX): PositionX =
-    this.copy(pos = this.pos.zip(other.pos).map(t => t._1 + t._2))
-
-  def +(other: NonEmptyList[Double]): PositionX =
-    this.copy(pos = this.pos.zip(other).map(t => t._1 + t._2))
-
-  def -(other: PositionX): PositionX =
-    this.copy(pos = this.pos.zip(other.pos).map(t => t._1 - t._2))
-
-  def *:(scalar: Double): PositionX =
-    this.copy(pos = this.pos.map(_ * scalar))
-
-  def *>:(l: NonEmptyList[Double]): PositionX =
-    this.copy(pos = this.pos.zip(l).map(x => x._1 * x._2))
-
-  def isInbounds: Boolean =
-    Foldable1[NonEmptyList].foldLeft(pos.zip(bounds), true)((a, c) => a && c._2.contains(c._1))
-}
-
-object PositionX {
-  def createPositionX(envX: EnvironmentX): RVar[PositionX] =
-    envX.bounds
-      .traverse(Dist.uniform)
-      .map(x => {
-        PositionX(x, envX.bounds, envX.f(x))
-      })
-}
-
 case class MGParticle(id: Int,
-                      pb: PositionX,
-                      pos: PositionX,
-                      velocity: PositionX,
+                      pb: Position,
+                      pos: Position,
+                      velocity: Position,
                       swarmID: Int,
                       lambda: Lambda) {
   def updatePB =
     this.copy(pb = this.pos)
 
-  def updatePos(x: PositionX) =
+  def updatePos(x: Position) =
     this.copy(pos = x)
 
-  def updateVelocity(x: PositionX) =
+  def updateVelocity(x: Position) =
     this.copy(velocity = x)
 
   def updateLambda =
@@ -136,7 +93,7 @@ object MGParticle {
       id =>
         Dist.stdUniform.flatMap(
           initLambda =>
-            PositionX
+            Position
               .createPositionX(envX)
               .map(p => MGParticle(0, p, p, p.zeroed, id, lambda(initLambda, envX)))))
   }
