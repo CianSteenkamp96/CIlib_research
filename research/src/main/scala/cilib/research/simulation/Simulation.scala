@@ -53,7 +53,7 @@ object Simulation {
             val swarm = createCollection(strat, env)
             Runner.foldStepS(
               placeholderENV,
-              Archive.bounded[MGParticle](50, Dominates.apply(env), CrowdingDistance.mostCrowded),
+              Archive.bounded[MGParticle](50, Dominates(env), CrowdingDistance.mostCrowded),
               rng,
               swarm,
               Runner.staticAlgorithm(stratName, Iteration.syncS(MGPSO.mgpso(env))),
