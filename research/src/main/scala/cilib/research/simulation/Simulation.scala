@@ -2,7 +2,7 @@ package cilib.research.simulation
 
 import java.io.File
 
-import cilib.exec.Runner.measure
+import cilib.exec.Runner.measureWithInfo
 import cilib.exec.{Measurement, Progress, Runner}
 import cilib.io.csvSinkAppend
 import cilib.research.core.{Archive, EnvironmentX}
@@ -14,34 +14,38 @@ import eu.timepit.refined.auto._
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
+import scalaz.effect.IO.putStrLn
+import scalaz.effect._
 import scalaz.stream.{Process, merge}
-
-final case class Results(run: Int, archive: String)
 
 object Simulation {
 
   def runIO(environments: NonEmptyList[EnvironmentX],
-            strat: (Double, EnvironmentX) => mgpso.Lambda,
+            strat: (Double, EnvironmentX) => LambdaStrategy,
             iterations: Int,
-    independentRuns: Int,
-    stratName: String,
-            fileName: String) = {
-    clearFile(fileName)
-    println("Executing " + independentRuns + " independent runs.")
-    println("Each independent run consists of " + environments.size + " problems.")
-    println("Each problem lasts " + iterations + " iterations.")
-    println("Saving results to " + fileName + ".")
-    val t0 = System.nanoTime()
-    run(environments, strat, iterations, independentRuns, stratName, fileName)
-    val t1 = System.nanoTime()
-    println("Complete. Time taken: " + ((t1 - t0) / 1000000000).toDouble + "s")
-  }
+            independentRuns: Int,
+            stratName: String,
+            fileName: String) =
+    for {
+    _ <- IO { clearFile(fileName) }
+    _ <- putStrLn("Executing " + independentRuns + " independent runs.")
+    _ <- putStrLn("Each independent run consists of " + environments.size + " problems.")
+    _ <- putStrLn("Each problem lasts " + iterations + " iterations.")
+    _ <- putStrLn("Saving results to " + fileName + ".")
+    timeTaken <- IO {
+      val start = System.nanoTime()
+      run(environments, strat, iterations, independentRuns, stratName, fileName)
+      val finish = System.nanoTime()
+      ((finish - start)/ 1000000000).toDouble
+    }
+    _ <- putStrLn("Complete. Time taken: " + timeTaken + "s")
+  } yield ()
 
-  def run(environments: NonEmptyList[EnvironmentX],
-          strat: (Double, EnvironmentX) => mgpso.Lambda,
+  private def run(environments: NonEmptyList[EnvironmentX],
+          strat: (Double, EnvironmentX) => LambdaStrategy,
           iterations: Int,
-    independentRuns: Int,
-    stratName: String,
+          independentRuns: Int,
+          stratName: String,
           fileName: String) =
     for (x <- 1 to independentRuns) {
       val rng = RNG.init(10L + x.toLong)
@@ -64,24 +68,25 @@ object Simulation {
           .toList
 
       simulations.foreach(simulation => {
-        val measured: Process[Task, Process[Task, Measurement[Results]]] =
+        val measured: Process[Task, Process[Task, Measurement[String]]] =
           Process.emitAll(List(simulation).map(_.take(iterations).pipe(measurement(x))))
 
         merge
           .mergeN(20)(measured)
-          .to(csvSinkAppend[Results](new File(fileName)))
+          .to(csvSinkAppend[String](new File(fileName)))
           .run
           .unsafePerformSync
       })
     }
 
-  def clearFile(fileName: String) = {
+  private def clearFile(fileName: String) = {
     val fileWriter = new java.io.PrintWriter(new File(fileName))
     fileWriter.println("")
   }
 
-  def measurement(run: Int) =
-    measure[(MGArchive, NonEmptyList[MGParticle]), Unit, Results](collection =>
-      Results(run, collection._1.values.map(x => x.pos.fitness).mkString(",") + "\n"))
+  private def measurement(run: Int) =
+    measureWithInfo[(MGArchive, NonEmptyList[MGParticle]), Unit, String]((info, collection) =>
+      ResultsToJson.finalArchive(run, info.iteration, collection._1)
+    )
 
 }

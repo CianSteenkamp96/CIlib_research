@@ -1,13 +1,13 @@
 package cilib.research.mgpso
 import cilib.research.core.EnvironmentX
 import scalaz.Scalaz._
+
 object Dominates {
   def apply(envX: EnvironmentX)(particleA: MGParticle, particleB: MGParticle): Boolean =
     if (particleA.pos.fitness == particleB.pos.fitness) {
       false
     } else {
       var check = false
-
       particleA.pos.fitness
         .zip(particleB.pos.fitness)
         .foldLeft(0)((a, c) =>

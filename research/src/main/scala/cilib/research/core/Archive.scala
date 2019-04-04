@@ -59,7 +59,7 @@ sealed abstract class Archive[A] {
         }
     }
 
-  private def removeDominatedAndInsert(v: A): Archive[A] =
+  protected def removeDominatedAndInsert(v: A): Archive[A] =
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
       case NonEmpty(l, b, c) =>

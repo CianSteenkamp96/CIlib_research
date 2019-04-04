@@ -1,15 +1,10 @@
 package cilib
 package exec
 
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
-
-import scalaz.stream._
 import scalaz.concurrent.Task
-
-import eu.timepit.refined.api.Refined
-import eu.timepit.refined.auto._
-import eu.timepit.refined.collection._
+import scalaz.stream._
 
 final case class Algorithm[A](name: String, value: A)
 final case class Problem[A](name: String, env: Env, eval: Eval[NonEmptyList, A])
@@ -148,14 +143,20 @@ object Runner {
 
   def measure[A, S, B](f: A => B)(implicit B: SchemaFor[B]): Process1[Progress[A], Measurement[B]] =
     process1.lift {
+      case Progress(_, _, _, _, _, value) =>
+        Measurement(f(value))
+    }
+
+  def measureWithInfo[A, S, B](f: (Info, A) => B)(implicit B: SchemaFor[B]): Process1[Progress[A], Measurement[B]] =
+    process1.lift {
       case Progress(algorithm, problem, seed, iteration, env, value) =>
-        Measurement(algorithm, problem, iteration, env, seed, f(value))
+        Measurement(f(Info(algorithm, problem, iteration, env, seed), value))
     }
 
   def measureWithState[A, S, B](f: (S, A) => B)(
       implicit B: SchemaFor[B]): Process1[Progress[(S, A)], Measurement[B]] =
     process1.lift {
-      case Progress(algorithm, problem, seed, iteration, env, (state, value)) =>
-        Measurement(algorithm, problem, iteration, env, seed, f(state, value))
+      case Progress(_, _, _, _, _, (state, value)) =>
+        Measurement(f(state, value))
     }
 }
