@@ -27,19 +27,56 @@ object Simulation {
             stratName: String,
             fileName: String) =
     for {
-    _ <- IO { clearFile(fileName) }
-    _ <- putStrLn("Executing " + independentRuns + " independent runs.")
-    _ <- putStrLn("Each independent run consists of " + environments.size + " problems.")
-    _ <- putStrLn("Each problem lasts " + iterations + " iterations.")
-    _ <- putStrLn("Saving results to " + fileName + ".")
-    timeTaken <- IO {
-      val start = System.nanoTime()
-      run(environments, strat, iterations, independentRuns, stratName, fileName)
-      val finish = System.nanoTime()
-      ((finish - start)/ 1000000000).toDouble
+      _ <- IO { clearFile(fileName) }
+      _ <- putStrLn("Executing " + independentRuns + " independent runs.")
+      _ <- putStrLn("Each independent run consists of " + environments.size + " problems.")
+      _ <- putStrLn("Each problem lasts " + iterations + " iterations.")
+      _ <- putStrLn("Saving results to " + fileName + ".")
+      timeTaken <- IO {
+        val start = System.nanoTime()
+        run(environments, strat, iterations, independentRuns, stratName, fileName)
+        val finish = System.nanoTime()
+        ((finish - start) / 1000000000).toDouble
+      }
+      _ <- putStrLn("Complete. Time taken: " + timeTaken + "s")
+    } yield ()
+
+  def runIO(benchmark: Benchmark,
+            lambdaStrategy: LambdaStrategy,
+            iterations: Int,
+            independentRuns: Int) =
+    IO {
+      for (x <- 1 to independentRuns) {
+        val rng = RNG.init(10L + x.toLong)
+
+        RList.reset(rng, independentRuns) // for random strategy
+        val simulations: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
+
+              val swarm = createCollection(lambdaStrategy, benchmark.)
+              Runner.foldStepS(
+                placeholderENV,
+                Archive.bounded[MGParticle](50, Dominates(env), CrowdingDistance.mostCrowded),
+                rng,
+                swarm,
+                Runner.staticAlgorithm(stratName, Iteration.syncS(MGPSO.mgpso(env))),
+                env.toStaticProblem,
+                (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
+              )
+            })
+            .toList
+
+        simulations.foreach(simulation => {
+          val measured: Process[Task, Process[Task, Measurement[String]]] =
+            Process.emitAll(List(simulation).map(_.take(iterations).pipe(measurement(x))))
+
+          merge
+            .mergeN(20)(measured)
+            .to(csvSinkAppend[String](new File(fileName)))
+            .run
+            .unsafePerformSync
+        })
+      }
     }
-    _ <- putStrLn("Complete. Time taken: " + timeTaken + "s")
-  } yield ()
 
   private def run(environments: NonEmptyList[Benchmark],
                   strat: (Double, Benchmark) => LambdaStrategy,
@@ -86,7 +123,6 @@ object Simulation {
 
   private def measurement(run: Int) =
     measureWithInfo[(MGArchive, NonEmptyList[MGParticle]), Unit, String]((info, collection) =>
-      ResultsToJson.finalArchive(run, info.iteration, collection._1)
-    )
+      ResultsToJson.finalArchive(run, info.iteration, collection._1))
 
 }

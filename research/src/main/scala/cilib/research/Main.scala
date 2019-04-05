@@ -1,48 +1,46 @@
 package cilib
 package research
 
-import cilib.research.benchmarks.wfg.WFG._
-import cilib.research.benchmarks.zdt.ZDT._
+import cilib.research.core.BenchmarkSuite
 import cilib.research.mgpso.LambdaStrategy
-import cilib.research.simulation.Simulation
+import cilib.research.simulation.SimulationConfig
 import scalaz._
+import scalaz.effect.IO._
 import scalaz.effect.{IO, SafeApp}
 
 object Main extends SafeApp {
 
-  val envs = NonEmptyList(
-    (wfg2objEnvs, "WFG.2D"),
-    (wfg3objEnvs, "WFG.3D"),
-    (zdtEnvs, "ZDT")
-  )
+  // args -> lambda strategy, benchmark suite
+  override def run(args: ImmutableArray[String]) = {
 
-  val ugh = wfg2objEnvs.head
+    val iterations = 2000
+    val runs = 1
 
-  val strats = NonEmptyList(
-    (LambdaStrategy.std _, "STD"),
-    (LambdaStrategy.linearIncreasing _, "LI"),
-    (LambdaStrategy.linearDecreasing _, "LD"),
-    (LambdaStrategy.random _, "R"),
-    (LambdaStrategy.random_i _, "RI"),
-    (LambdaStrategy.random_i_j _, "RIJ")
-  )
+    val benchmarkSuite = args(1) match {
+    case "ZDT"    => BenchmarkSuite.ZDT
+    case "WFG.2D" => BenchmarkSuite.WFG_2D
+    case "WFG.3D" => BenchmarkSuite.WFG_3D
+  }
 
-  val iterations = 2000
-  val runs = 1
-  /*
-    for (envList <- envs) {
-      for (strat <- strats) {
-        Simulation.runIO(envList._1, strat._1, itterations, runs, strat._2, strat._2 + "." + envList._2 + ".csv")
+    val configs = benchmarkSuite.benchmarks.map(benchmark => {
+      val bounds = benchmark.bounds
+
+      val lambdaStrategy = args(0) match {
+        case "STD" => LambdaStrategy.Standard(bounds)
+        case "LI"  => LambdaStrategy.Standard(bounds)
+        case "LD"  => LambdaStrategy.Standard(bounds)
+        case "R"   => LambdaStrategy.Standard(bounds)
+        case "RI"  => LambdaStrategy.Standard(bounds)
+        case "RIJ" => LambdaStrategy.Standard(bounds)
       }
-    }*/
 
-  override val runc: IO[Unit] = {
-    Simulation.runIO(NonEmptyList(ugh),
-                     strats.head._1,
-                     iterations,
-                     runs,
-                     strats.head._2,
-                     strats.head._2 + "." + envs.head._2)
+      SimulationConfig(benchmark, lambdaStrategy)
+    })
+
+    val a = configs.traverse1(x => IO(x))
+
+
+
   }
 
 }

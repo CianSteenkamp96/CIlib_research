@@ -1,6 +1,5 @@
 package cilib.research.mgpso
 
-import cilib.research.core._
 import cilib.{Dist, RNG}
 import scalaz.Scalaz._
 
@@ -14,6 +13,6 @@ object RList {
   def drop: Unit =
     list = list.tail
 
-  def getHeadAsList(envX: Benchmark) =
-    List.fill(envX.bounds.size)(list.head)
+  def getHeadAsList(size: Int) =
+    List.fill(size)(list.head)
 }

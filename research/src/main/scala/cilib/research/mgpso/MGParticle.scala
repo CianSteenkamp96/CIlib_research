@@ -30,17 +30,17 @@ case class MGParticle(id: Int,
 object MGParticle {
 
   def createCollection(lambda: (Double, Benchmark) => LambdaStrategy,
-                       envX: Benchmark): RVar[NonEmptyList[MGParticle]] = {
+                       benchmark: Benchmark): RVar[NonEmptyList[MGParticle]] = {
     val ids =
-      envX.cp.swarmSizes.toList.zipWithIndex.flatMap(x =>
+      benchmark.cp.swarmSizes.toList.zipWithIndex.flatMap(x =>
         if (x._1 >= 1) (1 to x._1).toList.map(_ => x._2) else List())
     ids.toNel.get.traverse(
       id =>
         Dist.stdUniform.flatMap(
           initLambda =>
             Position
-              .createPositionX(envX)
-              .map(p => MGParticle(0, p, p, p.zeroed, id, lambda(initLambda, envX)))))
+              .createPositionX(benchmark)
+              .map(p => MGParticle(0, p, p, p.zeroed, id, lambda(initLambda, benchmark)))))
   }
 
 }

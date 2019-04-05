@@ -9,12 +9,6 @@ import scalaz.concurrent.Task
 import scalaz.stream.Process
 import spire.math._
 
-case class ControlParameters(w: Double,
-                             c1: Double,
-                             c2: Double,
-                             c3: Double,
-                             swarmSizes: NonEmptyList[Int])
-
 case class Benchmark(name: String,
                      f: NonEmptyList[Double] => NonEmptyList[Double],
                      bounds: NonEmptyList[Interval[Double]],

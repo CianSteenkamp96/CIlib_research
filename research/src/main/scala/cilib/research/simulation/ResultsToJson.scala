@@ -1,7 +1,6 @@
 package cilib.research.simulation
 import cilib.research.MGArchive
 import scalaz.Scalaz._
-import scalaz._
 
 object ResultsToJson {
 
