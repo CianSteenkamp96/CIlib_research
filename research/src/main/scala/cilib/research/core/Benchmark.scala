@@ -15,10 +15,10 @@ case class ControlParameters(w: Double,
                              c3: Double,
                              swarmSizes: NonEmptyList[Int])
 
-case class EnvironmentX(name: String,
-                        f: NonEmptyList[Double] => NonEmptyList[Double],
-                        bounds: NonEmptyList[Interval[Double]],
-                        cp: ControlParameters) {
+case class Benchmark(name: String,
+                     f: NonEmptyList[Double] => NonEmptyList[Double],
+                     bounds: NonEmptyList[Interval[Double]],
+                     cp: ControlParameters) {
 
   val opt = Min
 

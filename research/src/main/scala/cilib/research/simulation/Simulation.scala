@@ -5,7 +5,7 @@ import java.io.File
 import cilib.exec.Runner.measureWithInfo
 import cilib.exec.{Measurement, Progress, Runner}
 import cilib.io.csvSinkAppend
-import cilib.research.core.{Archive, EnvironmentX}
+import cilib.research.core.{Archive, Benchmark}
 import cilib.research.mgpso.MGParticle._
 import cilib.research.mgpso._
 import cilib.research.{MGArchive, _}
@@ -20,8 +20,8 @@ import scalaz.stream.{Process, merge}
 
 object Simulation {
 
-  def runIO(environments: NonEmptyList[EnvironmentX],
-            strat: (Double, EnvironmentX) => LambdaStrategy,
+  def runIO(environments: NonEmptyList[Benchmark],
+            strat: (Double, Benchmark) => LambdaStrategy,
             iterations: Int,
             independentRuns: Int,
             stratName: String,
@@ -41,12 +41,12 @@ object Simulation {
     _ <- putStrLn("Complete. Time taken: " + timeTaken + "s")
   } yield ()
 
-  private def run(environments: NonEmptyList[EnvironmentX],
-          strat: (Double, EnvironmentX) => LambdaStrategy,
-          iterations: Int,
-          independentRuns: Int,
-          stratName: String,
-          fileName: String) =
+  private def run(environments: NonEmptyList[Benchmark],
+                  strat: (Double, Benchmark) => LambdaStrategy,
+                  iterations: Int,
+                  independentRuns: Int,
+                  stratName: String,
+                  fileName: String) =
     for (x <- 1 to independentRuns) {
       val rng = RNG.init(10L + x.toLong)
 

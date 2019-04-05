@@ -29,8 +29,8 @@ case class MGParticle(id: Int,
 
 object MGParticle {
 
-  def createCollection(lambda: (Double, EnvironmentX) => LambdaStrategy,
-                       envX: EnvironmentX): RVar[NonEmptyList[MGParticle]] = {
+  def createCollection(lambda: (Double, Benchmark) => LambdaStrategy,
+                       envX: Benchmark): RVar[NonEmptyList[MGParticle]] = {
     val ids =
       envX.cp.swarmSizes.toList.zipWithIndex.flatMap(x =>
         if (x._1 >= 1) (1 to x._1).toList.map(_ => x._2) else List())

@@ -11,20 +11,25 @@ case class LambdaStrategy(value: RVar[NonEmptyList[Double]],
     LambdaStrategy(next(value), next)
 }
 
+
+
+
+
+
 object LambdaStrategy {
 
-  def linearIncreasing(x: Double, envX: EnvironmentX): LambdaStrategy =
+  def linearIncreasing(envX: Benchmark): LambdaStrategy =
     new LambdaStrategy(RVar.pure(List.fill(envX.bounds.size)(0.0).toNel.get),
       rl => rl.map(_.map(x => x + 0.0005)))
 
-  def linearDecreasing(x: Double, envX: EnvironmentX): LambdaStrategy =
+  def linearDecreasing(envX: Benchmark): LambdaStrategy =
     new LambdaStrategy(RVar.pure(List.fill(envX.bounds.size)(1.0).toNel.get),
       rl => rl.map(_.map(x => x - 0.0005)))
 
-  def std(x: Double, envX: EnvironmentX): LambdaStrategy =
+  def std(envX: Benchmark): LambdaStrategy =
     new LambdaStrategy(RVar.pure(List.fill(envX.bounds.size)(x).toNel.get), rl => rl)
 
-  def random(x: Double, envX: EnvironmentX): LambdaStrategy =
+  def random(envX: Benchmark): LambdaStrategy =
     new LambdaStrategy({
       val value = RList.getHeadAsList(envX).toNel.get
       RList.drop
@@ -35,11 +40,11 @@ object LambdaStrategy {
       RVar.pure(value)
     })
 
-  def random_i(x: Double, envX: EnvironmentX): LambdaStrategy =
+  def random_i(envX: Benchmark): LambdaStrategy =
     new LambdaStrategy(Dist.stdUniform.map(value => List.fill(envX.bounds.size)(value).toNel.get),
       _ => Dist.stdUniform.map(value => List.fill(envX.bounds.size)(value).toNel.get))
 
-  def random_i_j(x: Double, envX: EnvironmentX): LambdaStrategy =
+  def random_i_j(envX: Benchmark): LambdaStrategy =
     new LambdaStrategy(Dist.stdUniform.replicateM(envX.bounds.size).map(_.toNel.get),
       _ => Dist.stdUniform.replicateM(envX.bounds.size).map(_.toNel.get))
 

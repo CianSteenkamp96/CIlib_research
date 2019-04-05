@@ -40,7 +40,7 @@ case class Position(pos: NonEmptyList[Double],
 }
 
 object Position {
-  def createPositionX(envX: EnvironmentX): RVar[Position] =
+  def createPositionX(envX: Benchmark): RVar[Position] =
     envX.bounds
       .traverse(Dist.uniform)
       .map(x => {

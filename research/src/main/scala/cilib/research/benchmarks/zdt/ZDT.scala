@@ -3,7 +3,7 @@ package cilib.research.benchmarks.zdt
 import java.lang.Math._
 
 import cilib._
-import cilib.research.core.{ControlParameters, EnvironmentX}
+import cilib.research.core.{ControlParameters, Benchmark}
 import scalaz.Scalaz._
 import scalaz._
 import spire.implicits._
@@ -110,23 +110,23 @@ object ZDT {
     ZDT6.evaluate(input).get
 
   val zdtEnvs = NonEmptyList(
-    EnvironmentX("ZDT1",
+    Benchmark("ZDT1",
                  ZDT1F,
                  ZDT1.bounds,
                  ControlParameters(0.475, 1.80, 1.10, 1.80, NonEmptyList(33, 17))),
-    EnvironmentX("ZDT2",
+    Benchmark("ZDT2",
                  ZDT2F,
                  ZDT2.bounds,
                  ControlParameters(0.075, 1.60, 1.35, 1.90, NonEmptyList(8, 42))),
-    EnvironmentX("ZDT3",
+    Benchmark("ZDT3",
                  ZDT3F,
                  ZDT3.bounds,
                  ControlParameters(0.050, 1.85, 1.90, 1.90, NonEmptyList(8, 42))),
-    EnvironmentX("ZDT4",
+    Benchmark("ZDT4",
                  ZDT4F,
                  ZDT4.bounds,
                  ControlParameters(0.175, 1.85, 1.35, 1.85, NonEmptyList(5, 45))),
-    EnvironmentX("ZDT6",
+    Benchmark("ZDT6",
                  ZDT6F,
                  ZDT6.bounds,
                  ControlParameters(0.600, 1.85, 1.55, 1.80, NonEmptyList(1, 49)))

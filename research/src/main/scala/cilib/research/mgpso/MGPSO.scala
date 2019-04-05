@@ -1,13 +1,13 @@
 package cilib.research.mgpso
 import cilib.research.MGArchive
-import cilib.research.core.{EnvironmentX, Position}
+import cilib.research.core.{Benchmark, Position}
 import cilib.{Dist, RVar, Step, StepS}
 import scalaz.Scalaz._
 import scalaz._
 
 object MGPSO {
 
-  private def multiEval(envX: EnvironmentX)(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
+  private def multiEval(envX: Benchmark)(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
     val fitness = if (particle.pos.isInbounds) {
       envX.f(particle.pos.pos)
     } else {
@@ -16,7 +16,7 @@ object MGPSO {
     particle.updateFitness(fitness)
   }
 
-  private def gbest(envX: EnvironmentX)(particle: MGParticle, collection: NonEmptyList[MGParticle]) =
+  private def gbest(envX: Benchmark)(particle: MGParticle, collection: NonEmptyList[MGParticle]) =
     MGStep.stepPure[Double, Position] {
       val x = collection.toList
         .filter(x => x.swarmID == particle.swarmID)
@@ -31,7 +31,7 @@ object MGPSO {
     particle.pb
   }
 
-  private def updatePBest(envX: EnvironmentX)(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
+  private def updatePBest(envX: Benchmark)(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
     if (envX.compare(particle.pos.fitness, particle.pb.fitness)) {
       particle.updatePB
     } else {
@@ -39,7 +39,7 @@ object MGPSO {
     }
   }
 
-  private def updatePBestBounds(envX: EnvironmentX)(p: MGParticle): StepS[Double, MGArchive, MGParticle] =
+  private def updatePBestBounds(envX: Benchmark)(p: MGParticle): StepS[Double, MGArchive, MGParticle] =
     if (p.pos.isInbounds) updatePBest(envX)(p) else MGStep.stepPure[Double, MGParticle](p)
 
   private def calcVelocity(particle: MGParticle,
@@ -94,7 +94,7 @@ object MGPSO {
       archive.insert(particle)
     }
 
-  def mgpso(envX: EnvironmentX)
+  def mgpso(envX: Benchmark)
     : NonEmptyList[MGParticle] => MGParticle => StepS[Double, MGArchive, MGParticle] =
     collection =>
       x =>

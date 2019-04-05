@@ -14,6 +14,6 @@ object RList {
   def drop: Unit =
     list = list.tail
 
-  def getHeadAsList(envX: EnvironmentX) =
+  def getHeadAsList(envX: Benchmark) =
     List.fill(envX.bounds.size)(list.head)
 }
