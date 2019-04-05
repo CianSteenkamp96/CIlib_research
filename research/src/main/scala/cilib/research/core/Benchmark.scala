@@ -12,7 +12,7 @@ import spire.math._
 case class Benchmark(name: String,
                      f: NonEmptyList[Double] => NonEmptyList[Double],
                      bounds: NonEmptyList[Interval[Double]],
-                     cp: ControlParameters) {
+                     controlParameters: ControlParameters) {
 
   val opt = Min
 
@@ -30,6 +30,6 @@ case class Benchmark(name: String,
     x.toList(index) < y.toList(index)
 
   def toStaticProblem: Process[Task, Problem[Double]] =
-    Runner.staticProblem(name + " " + cp.swarmSizes.size + "-objectives", placeholderENV.eval)
+    Runner.staticProblem(name + " " + controlParameters.swarmSizes.size + "-objectives", placeholderENV.eval)
 
 }

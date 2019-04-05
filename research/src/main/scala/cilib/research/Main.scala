@@ -3,18 +3,15 @@ package research
 
 import cilib.research.core.BenchmarkSuite
 import cilib.research.mgpso.LambdaStrategy
-import cilib.research.simulation.SimulationConfig
+import cilib.research.simulation.Simulation
 import scalaz._
 import scalaz.effect.IO._
-import scalaz.effect.{IO, SafeApp}
+import scalaz.effect.SafeApp
 
 object Main extends SafeApp {
 
   // args -> lambda strategy, benchmark suite
   override def run(args: ImmutableArray[String]) = {
-
-    val iterations = 2000
-    val runs = 1
 
     val benchmarkSuite = args(1) match {
     case "ZDT"    => BenchmarkSuite.ZDT
@@ -22,7 +19,7 @@ object Main extends SafeApp {
     case "WFG.3D" => BenchmarkSuite.WFG_3D
   }
 
-    val configs = benchmarkSuite.benchmarks.map(benchmark => {
+    val simulationsIO = benchmarkSuite.benchmarks.traverse1(benchmark => {
       val bounds = benchmark.bounds
 
       val lambdaStrategy = args(0) match {
@@ -34,12 +31,14 @@ object Main extends SafeApp {
         case "RIJ" => LambdaStrategy.Standard(bounds)
       }
 
-      SimulationConfig(benchmark, lambdaStrategy)
+      Simulation.runIO(lambdaStrategy, benchmark, 2000, 4)
     })
 
-    val a = configs.traverse1(x => IO(x))
-
-
+    for {
+      _ <- putStrLn("Starting")
+      _ <- simulationsIO
+      _ <- putStrLn("Done")
+    } yield ()
 
   }
 

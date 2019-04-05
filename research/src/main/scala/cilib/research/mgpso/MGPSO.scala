@@ -102,7 +102,7 @@ object MGPSO {
           _ <- insertIntoArchive(x)
           cog <- pbest(x)
           soc <- gbest(envX)(x, collection)
-          v <- calcVelocity(x, soc, cog, envX.cp.w, envX.cp.c1, envX.cp.c2, envX.cp.c3)
+          v <- calcVelocity(x, soc, cog, envX.controlParameters.w, envX.controlParameters.c1, envX.controlParameters.c2, envX.controlParameters.c3)
           p <- stdPosition(x, v)
           p2 <- multiEval(envX)(p)
           p3 <- updateVelocity(p2, v)
