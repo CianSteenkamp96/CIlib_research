@@ -24,14 +24,14 @@ object Main extends SafeApp {
 
       val lambdaStrategy = args(0) match {
         case "STD" => LambdaStrategy.Standard(bounds)
-        case "LI"  => LambdaStrategy.Standard(bounds)
-        case "LD"  => LambdaStrategy.Standard(bounds)
-        case "R"   => LambdaStrategy.Standard(bounds)
-        case "RI"  => LambdaStrategy.Standard(bounds)
-        case "RIJ" => LambdaStrategy.Standard(bounds)
+        case "LI" => LambdaStrategy.LinearIncreasing(bounds)
+        case "LD" => LambdaStrategy.LinearDecreasing(bounds)
+        case "R" => LambdaStrategy.Random(bounds)
+        case "RI" => LambdaStrategy.RandomI(bounds)
+        case "RIJ" => LambdaStrategy.RandomIJ(bounds)
       }
 
-      Simulation.runIO(lambdaStrategy, benchmark, 2000, 4)
+      Simulation.runIO(lambdaStrategy, benchmark, 2000, 30)
     })
 
     for {
