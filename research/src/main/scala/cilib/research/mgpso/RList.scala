@@ -1,10 +1,10 @@
 package cilib.research.mgpso
 
-import cilib.{Dist, RNG}
+import cilib.{Dist, RNG, RVar}
 import scalaz.Scalaz._
 
 object RList {
-  var list = List[Double]()
+  var list = RVar.doubles(1).eval(RNG.fromTime)
 
   def reset(rng: RNG, runs: Int): Unit =
     list =
