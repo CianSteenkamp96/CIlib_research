@@ -17,6 +17,7 @@ object Main extends SafeApp {
       case "ZDT" => BenchmarkSuite.ZDT
       case "WFG.2D" => BenchmarkSuite.WFG_2D
       case "WFG.3D" => BenchmarkSuite.WFG_3D
+      case "WFG6.2D" => BenchmarkSuite.OnlyWFG6_2D
     }
 
     val simulationsIO = benchmarkSuite.benchmarks.traverse1(benchmark => {

@@ -76,6 +76,16 @@ object BenchmarkSuite {
     )
   )
 
+  val OnlyWFG6_2D = BenchmarkSuite(
+    "WFG6.2D",
+    NonEmptyList(
+      Benchmark("WFG6.2D.All",
+                WFG6(2),
+                bounds,
+                ControlParameters(0.525, 0.65, 0.60, 1.65, NonEmptyList(19, 31)))
+    )
+  )
+
   val WFG_3D = BenchmarkSuite(
     "WFG.3D",
     NonEmptyList(
