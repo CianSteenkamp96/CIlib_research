@@ -70,7 +70,6 @@ object MGPSO {
                 arc <- (archiveGuide.pos - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
                 lambda <- particle.lambda.value
               } yield {
-                println(particle.id + " ---- " + particle.swarmID + " ---- " + lambda)
                 (w *: particle.velocity) + (c1 *: cog) + (lambda *>: (c2 *: soc)) + (lambda.map(x =>
                   1 - x) *>: (c3 *: arc))
               }

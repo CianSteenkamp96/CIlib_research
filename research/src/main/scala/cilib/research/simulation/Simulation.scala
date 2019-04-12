@@ -29,7 +29,7 @@ object Simulation {
       _ <- (1 to independentRuns).toList.traverse(runCount => {
 
         val rng = RNG.init(10L + runCount.toLong)
-        val swarm = createCollection(benchmark, lambdaStrategy)
+        val swarm = createCollection(benchmark, lambdaStrategy.evalValue(rng))
         RList.reset(rng, independentRuns) // for random strategy
 
         val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
