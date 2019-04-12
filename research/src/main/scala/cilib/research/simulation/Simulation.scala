@@ -67,8 +67,9 @@ object Simulation {
 
   private def measurement(run: Int) =
     measureWithInfo[(MGArchive, NonEmptyList[MGParticle]), Unit, String]((info, collection) =>
-      //ResultsToJson.finalArchive(run, info.iteration, collection._1))
-      ResultsToJson.archiveWithParticles(run, info.iteration, collection._1, collection._2))
+      ResultsToJson.finalArchive(run, info.iteration, collection._1))
+
+  //ResultsToJson.archiveWithParticles(run, info.iteration, collection._1, collection._2))
 
   private def clearFile(fileName: String) = {
     val fileWriter = new java.io.PrintWriter(new File(fileName))

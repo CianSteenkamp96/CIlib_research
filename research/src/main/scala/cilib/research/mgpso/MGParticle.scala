@@ -1,7 +1,7 @@
 package cilib.research.mgpso
 
-import cilib.RVar
 import cilib.research.core._
+import cilib.{Dist, RVar}
 import scalaz.Scalaz._
 import scalaz._
 
@@ -45,7 +45,10 @@ object MGParticle {
       .traverse(x =>
         Position
           .createPosition(benchmark)
-          .map(p => MGParticle(x._2, p, p, p.zeroed, x._1, lambdaStrategy))
+          .flatMap(p => {
+            Dist.stdUniform.map(lambda =>
+              MGParticle(x._2, p, p, p.zeroed, x._1, lambdaStrategy.setValue(lambda)))
+          })
       )
 
 }

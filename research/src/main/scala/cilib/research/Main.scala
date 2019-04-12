@@ -32,7 +32,7 @@ object Main extends SafeApp {
         case "RIJ" => LambdaStrategy.RandomIJ(bounds)
       }
 
-      Simulation.runIO(lambdaStrategy, benchmark, 2000, 30)
+      Simulation.runIO(lambdaStrategy, benchmark, 5, 1)
     })
 
     for {

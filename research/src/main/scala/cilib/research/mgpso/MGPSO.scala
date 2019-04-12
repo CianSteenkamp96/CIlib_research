@@ -23,7 +23,6 @@ object MGPSO {
         .sortWith((x, y) => envX.compareAtIndex(x.pb.fitness, y.pb.fitness, x.swarmID))
         .head
         .pb
-      //println(x.fitness)
       x
     }
 
