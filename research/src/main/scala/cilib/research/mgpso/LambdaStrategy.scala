@@ -7,7 +7,7 @@ import spire.math.Interval
 
 case class LambdaStrategy(name: String,
                           value: RVar[NonEmptyList[Double]],
-                          RVar[NonEmptyList[Double]]next: RVar[NonEmptyList[Double]] =>,
+                          next: RVar[NonEmptyList[Double]] => RVar[NonEmptyList[Double]],
                           state: List[Double]) {
 
   def update: LambdaStrategy =
