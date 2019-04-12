@@ -13,3 +13,11 @@ local.*
 .idea
 *.csv
 *.sc
+STD.*
+R.*
+RI.*
+RIJ.*
+LD.*
+LI.*
+*.jar
+*.MF
