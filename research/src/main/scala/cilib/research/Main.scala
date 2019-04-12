@@ -41,23 +41,16 @@ object Main extends SafeApp {
         Benchmark("WFG6.2D.All",
           WFG6(2),
           bounds,
-          ControlParameters(0.525, 0.65, 0.60, 1.65, NonEmptyList(19, 31)))
+                  ControlParameters(0.525, 0.65, 0.60, 1.65, NonEmptyList(1, 2)))
       )
     )
 
     val simulationsIO = Custom.benchmarks.traverse1(benchmark => {
       val bounds = benchmark.bounds
 
-      val lambdaStrategy = args(0) match {
-        case "STD" => LambdaStrategy.Standard(bounds)
-        case "LI" => LambdaStrategy.LinearIncreasing(bounds)
-        case "LD" => LambdaStrategy.LinearDecreasing(bounds)
-        case "R" => LambdaStrategy.Random(bounds)
-        case "RI" => LambdaStrategy.RandomI(bounds)
-        case "RIJ" => LambdaStrategy.RandomIJ(bounds)
-      }
+      val lambdaStrategy = LambdaStrategy.RandomI(bounds)
 
-      Simulation.runIO(lambdaStrategy, benchmark, 2000, 30)
+      Simulation.runIO(lambdaStrategy, benchmark, 3, 1)
     })
 
     for {

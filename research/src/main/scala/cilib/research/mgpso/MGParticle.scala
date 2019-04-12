@@ -39,12 +39,13 @@ object MGParticle {
         if (x._1 >= 1) (1 to x._1).toList.map(_ => x._2)
         else List()
       )
+      .zipWithIndex
       .toNel
       .get
-      .traverse(id =>
+      .traverse(x =>
         Position
           .createPosition(benchmark)
-          .map(p => MGParticle(0, p, p, p.zeroed, id, lambdaStrategy))
+          .map(p => MGParticle(x._2, p, p, p.zeroed, x._1, lambdaStrategy))
       )
 
 }
