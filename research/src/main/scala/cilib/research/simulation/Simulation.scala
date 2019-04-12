@@ -47,7 +47,7 @@ object Simulation {
           Process.emitAll(List(simulation).map(_.take(iterations).pipe(measurement(runCount))))
 
         val stream = merge
-          .mergeN(8)(measured)
+          .mergeN(20)(measured)
           .to(csvSinkAppend[String](new File(lambdaStrategy.name + "." + benchmark.name)))
           .run
 
