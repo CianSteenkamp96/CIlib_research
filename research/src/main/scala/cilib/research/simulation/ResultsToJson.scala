@@ -6,8 +6,8 @@ import scalaz.Scalaz._
 
 object ResultsToJson {
 
-  def finalArchive(run: Int, iteration: Int, archive: MGArchive): String = {
-    if (iteration === 2000) {
+  def finalArchive(run: Int, iteration: Int, archive: MGArchive, maxIterations: Int): String = {
+    if (iteration === maxIterations) {
       "{ \"archive\": [" +
         archive.values
           .map(x => "[" + x.pos.fitness.toList.mkString(",") + "]")
