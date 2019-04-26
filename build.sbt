@@ -371,3 +371,7 @@ lazy val io = project
         "org.scalaz.stream" %% "scalaz-stream" % scalazStreamVersion
       )
     ))
+
+enablePlugins(PackPlugin)
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+packMain := Map("MGPSO_DTLZ_3Obj" -> "cilib.research.Main")
