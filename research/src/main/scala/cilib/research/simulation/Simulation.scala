@@ -37,8 +37,8 @@ object Simulation {
           Runner.foldStepS(
             placeholderENV,
             /////////////////////////////////////////////////////// HERE ////////////////////////////////////////////////////////////////////////////////////
-//            Archive.bounded[MGParticle](50, Dominates(benchmark), CrowdingDistance.mostCrowded),
-            Archive.bounded[MGParticle](50, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded),
+//            Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded),
+            Archive.partialBounded[MGParticle](150, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded, List.fill(numObjectives)(0).toNel.get),
             rng,
             swarm,
             Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark))),
