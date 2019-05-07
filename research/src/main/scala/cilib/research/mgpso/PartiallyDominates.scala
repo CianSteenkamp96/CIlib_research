@@ -4,7 +4,7 @@ import scalaz._
 import Scalaz._
 
 object PartiallyDominates {
-	def apply(envX: Benchmark)(particleA: MGParticle, particleB: MGParticle, random_indices: NonEmptyList[Int]): Boolean =
+	def apply(envX: Benchmark)(particleA: MGParticle, particleB: MGParticle, random_indices: (Int, Int, Int)): Boolean =
 		if (particleA.pos.fitness == particleB.pos.fitness){
 			false
 		} else {
@@ -29,8 +29,8 @@ object PartiallyDominates {
 
 			} else {
 
-				val partialParticleA = List[Double](particleA.pos.fitness.toList(random_indices.toList(0)), particleA.pos.fitness.toList(random_indices.toList(1)), particleA.pos.fitness.toList(random_indices.toList(2)))
-				val partialParticleB = List[Double](particleA.pos.fitness.toList(random_indices.toList(0)), particleA.pos.fitness.toList(random_indices.toList(1)), particleA.pos.fitness.toList(random_indices.toList(2)))
+				val partialParticleA = List[Double](particleA.pos.fitness.toList(random_indices._1), particleA.pos.fitness.toList(random_indices._2), particleA.pos.fitness.toList(random_indices._3))
+				val partialParticleB = List[Double](particleA.pos.fitness.toList(random_indices._1), particleA.pos.fitness.toList(random_indices._2), particleA.pos.fitness.toList(random_indices._3))
 
 				partialParticleA.zip(partialParticleB).foldLeft(0)(
 					(a, c) => a +
