@@ -99,12 +99,4 @@ object GetIndices {
       }
       (i1, i2, i3) // return 3 indices as tuple
     }
-
-  def updateFreqs(f: NonEmptyList[Int], i123: (Int, Int, Int)): NonEmptyList[Int] =
-    f.zipWithIndex.map(el =>
-      if ((el._2 == i123._1) || (el._2 == i123._2) || (el._2 == i123._3))
-        el._1 + 1
-      else el._1
-    )
-
 }
