@@ -39,7 +39,7 @@ object Main extends SafeApp {
 //        LambdaStrategy.RandomIJ(bounds)
 
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      Simulation.runIO("MGPSO", 5, lambdaStrategy, benchmark, 100, 3)
+      Simulation.runIO("PMGPSO", 5, lambdaStrategy, benchmark, 100, 3)
     })
 
     for {
