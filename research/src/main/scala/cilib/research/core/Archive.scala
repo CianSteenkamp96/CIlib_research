@@ -1,10 +1,10 @@
 package cilib.research.core
 
+import cilib.research.mgpso.Dominates
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.numeric.Positive
 import scalaz.Scalaz._
 import scalaz._
-import GetIndices._
 
 sealed trait ArchiveBound
 final case class Bounded[A](limit: Int Refined Positive, deletePolicy: List[A] => A)
@@ -22,17 +22,14 @@ sealed abstract class Archive[A] {
   import Archive._
   def values: List[A] =
     this match {
-      case Empty(_, _) | PartialEmpty(_, _, _)  => List()
-      case NonEmpty(l, _, _)                    => l
-      case PartialNonEmpty(l , _, _, _)         => l
+      case Empty(_, _)       => List()
+      case NonEmpty(l, _, _) => l
     }
 
   def bound: ArchiveBound =
     this match {
-      case Empty(b, _)                  => b
-      case PartialEmpty(b, _, _)        => b
-      case NonEmpty(_, b, _)            => b
-      case PartialNonEmpty(_, b, _, _)  => b
+      case Empty(b, _)       => b
+      case NonEmpty(_, b, _) => b
     }
 
 // Unnecessary according to Gary
@@ -42,153 +39,118 @@ sealed abstract class Archive[A] {
 //      case NonEmpty(_, _, c) => c
 //    }
 
-  def insert(v: A): Archive[A] =
+  def insert(envX: Benchmark)(v: A): Archive[A] =
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
-      case PartialEmpty(b, c, f) => PartialNonEmpty[A](List(v), b, c, f)
       case NonEmpty(l, b, c) =>
-        b match {
-          case Bounded(limit, deletePolicy) =>
-            // l.forall(x => !c(x, v)) means that there is no element in the list that dominates v
-            if (l.size < limit.value && l.forall(x => !c(x, v))) {
-              removeDominatedAndInsert(v)
-            } else if (l.size == limit.value && l.forall(x => !c(x, v))) {
-              val selected = deletePolicy(l)
-              NonEmpty[A](l.filterNot(x => x.equals(selected)), b, c).removeDominatedAndInsert(v)
-            } else
-              NonEmpty[A](l, b, c)
-          case Unbounded() =>
-            if (l.forall(x => !c(x, v)))
-              removeDominatedAndInsert(v)
-            else
-              NonEmpty[A](l, b, c)
+        if (!envX.controlParameters.freqs.isDefined)
+          b match {
+            case Bounded(limit, deletePolicy) =>
+              // l.forall(x => !c(x, v)) means that there is no element in the list that dominates v
+              if (l.size < limit.value && l.forall(x => !c(x, v)))
+                removeDominatedAndInsert(v)
+              else if (l.size == limit.value && l.forall(x => !c(x, v))) {
+                val selected = deletePolicy(l)
+                NonEmpty[A](l.filterNot(x => x.equals(selected)), b, c).removeDominatedAndInsert(v)
+              } else
+                NonEmpty[A](l, b, c)
+            case Unbounded() =>
+              if (l.forall(x => !c(x, v)))
+                removeDominatedAndInsert(v)
+              else
+                NonEmpty[A](l, b, c)
+          }
+        else {
+            envX.controlParameters.setRandomIndices_and_updateFreqs // ######################################### CHANGES / NEW ###########################################
+            b match {
+              case Bounded(limit, deletePolicy) =>
+                if (l.size < limit.value && l.forall(current => !c(current, v)))
+                  NonEmpty[A](v :: l, b, c)
+//                  removeDominatedAndInsert(v) // #################### does cleanup make sense - pmgpso seems very SLOW - even with cleanup ..... ??????????????????????????????
+                else if (l.size == limit.value && l.forall(current => !c(current, v))) {
+                  val selected = deletePolicy(l)
+                  NonEmpty[A](v :: l.filterNot(x => x.equals(selected)), b, c)
+//                  NonEmpty[A](v :: l.filterNot(x => x.equals(selected)), b, c).removeDominatedAndInsert(v)
+                } else
+                  NonEmpty[A](l, b, c)
+              case Unbounded() =>
+                if (l.forall(current => !c(current, v)))
+                  NonEmpty[A](v :: l, b, c)
+//                  removeDominatedAndInsert(v)
+                else
+                  NonEmpty[A](l, b, c)
+            }
         }
-      case PartialNonEmpty(l, b, c, f) => {
-        val probs: NonEmptyList[Double] = probFromFitness(fitnessFromFreq(f))
-        val random_indices = get3Indices(probs)
-
-        b match {
-          case Bounded(limit, deletePolicy) =>
-            if (l.size < limit.value && l.forall(current => !c(current, v, random_indices))) {
-              PartialNonEmpty[A](v :: l, b, c, updateFreqs(f, random_indices))
-            } else if (l.size == limit.value && l.forall(current => !c(current, v, random_indices))) {
-              val selected = deletePolicy(l)
-              PartialNonEmpty[A](v :: l.filterNot(x => x.equals(selected)), b, c, updateFreqs(f, random_indices))
-            } else
-              PartialNonEmpty[A](l, b, c, updateFreqs(f, random_indices))
-          case Unbounded() =>
-            if (l.forall(current => !c(current, v, random_indices)))
-              PartialNonEmpty[A](v :: l, b, c, updateFreqs(f, random_indices))
-            else
-              PartialNonEmpty[A](l, b, c, updateFreqs(f, random_indices))
-        }
-      }
     }
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY MGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY MGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   protected def removeDominatedAndInsert(v: A): Archive[A] =
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
-      case PartialEmpty(b, c, f) => PartialEmpty[A](b, c, f) // should never be called in reality for PartialEmpty case
       case NonEmpty(l, b, c) =>
-        val dominated = l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
+        val dominated =
+          l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
         NonEmpty[A](v :: l.filterNot(dominated.contains), b, c)
-      case PartialNonEmpty(l, b, insertPolicy, frequencies) => PartialNonEmpty[A](l, b, insertPolicy, frequencies) // should never be called in reality for PartialNonEmpty case
     }
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY MGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY MGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   def removeDominated(v: A, l: List[A]): List[A] =
     this match {
-      case Empty(_, _) | PartialEmpty(_, _, _) => List[A]() // should never be called in reality for PartialEmpty case
+      case Empty(_, _) => List[A]()
       case NonEmpty(_, _, c) =>
         val dominated =
           l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
         l.filterNot(dominated.contains)
-      case PartialNonEmpty(l, _, _, _) => l // should never be called in reality for PartialEmpty case
     }
 
   def empty: Archive[A] =
     this match {
-      case Empty(_, _) | PartialEmpty(_, _, _) => this
+      case Empty(_, _)       => this
       case NonEmpty(_, b, c) => Empty(b, c)
-      case PartialNonEmpty(_, b, c, f) => PartialEmpty(b, c, f)
     }
 
   def isEmpty: Boolean =
     this match {
-      case Empty(_, _) | PartialEmpty(_, _, _) => true
-      case NonEmpty(_, _, _) | PartialNonEmpty(_, _, _, _) => false
+      case Empty(_, _)       => true
+      case NonEmpty(_, _, _) => false
     }
 
   def size: Int =
     this match {
-      case Empty(_, _) | PartialEmpty(_, _, _) => 0
+      case Empty(_, _)       => 0
       case NonEmpty(l, _, _) => l.size
-      case PartialNonEmpty(l, _, _, _) => l.size
     }
 }
 
 object Archive {
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    private final case class Empty[A](b: ArchiveBound, insertPolicy: (A, A) => Boolean) extends Archive[A]
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PMGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    private final case class PartialEmpty[A](b: ArchiveBound, insertPolicy: (A, A, (Int, Int, Int)) => Boolean, frequencies: NonEmptyList[Int]) extends Archive[A]
+  private final case class Empty[A](b: ArchiveBound, insertPolicy: (A, A) => Boolean)
+      extends Archive[A]
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    private final case class NonEmpty[A](l: List[A], b: ArchiveBound, insertPolicy: (A, A) => Boolean) extends Archive[A]
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PMGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    private final case class PartialNonEmpty[A](l: List[A], b: ArchiveBound, insertPolicy: (A, A, (Int, Int, Int)) => Boolean, frequencies: NonEmptyList[Int]) extends Archive[A]
+  private final case class NonEmpty[A](l: List[A], b: ArchiveBound, insertPolicy: (A, A) => Boolean)
+      extends Archive[A]
 
   // Let user create bounded instance - Gary ?
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   def bounded[A](limit: Int Refined Positive,
                  insertPolicy: (A, A) => Boolean,
                  deletePolicy: List[A] => A): Archive[A] =
     Empty[A](Bounded(limit, deletePolicy), insertPolicy)
 
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PMGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  def partialBounded[A](limit: Int Refined Positive,
-                        insertPolicy: (A, A, (Int, Int, Int)) => Boolean,
-                        deletePolicy: List[A] => A,
-                        frequencies: NonEmptyList[Int]): Archive[A] =
-    PartialEmpty[A](Bounded(limit, deletePolicy), insertPolicy, frequencies)
-
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   def unbounded[A](insertPolicy: (A, A) => Boolean): Archive[A] =
     Empty[A](Unbounded(), insertPolicy)
 
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PMGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  def partialUnbounded[A](insertPolicy: (A, A, (Int, Int, Int)) => Boolean, frequencies: NonEmptyList[Int]): Archive[A] =
-    PartialEmpty[A](Unbounded(), insertPolicy, frequencies)
-
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  def boundedNonEmpty[A](seeds: NonEmptyList[A],
-                         limit: Int Refined Positive,
-                         insertPolicy: (A, A) => Boolean,
-                         deletePolicy: List[A] => A): Archive[A] = {
+  def boundedNonEmpty[A](envX: Benchmark)(
+      seeds: NonEmptyList[A], // ##################################### CHANGES #######################################
+      limit: Int Refined Positive,
+      insertPolicy: (A, A) => Boolean,
+      deletePolicy: List[A] => A): Archive[A] = {
     val emptyArchive: Archive[A] = bounded(limit, insertPolicy, deletePolicy)
-    seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
+    seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(envX)(seed)) // ##################################### CHANGES #######################################
   }
 
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PMGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  def partialBoundedNonEmpty[A](seeds: NonEmptyList[A],
-                                limit: Int Refined Positive,
-                                insertPolicy: (A, A, (Int, Int, Int)) => Boolean,
-                                deletePolicy: List[A] => A,
-                                frequencies: NonEmptyList[Int]): Archive[A] = {
-    val emptyArchive: Archive[A] = partialBounded(limit, insertPolicy, deletePolicy, frequencies)
-    seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
-  }
-
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  def unboundedNonEmpty[A](seeds: NonEmptyList[A], insertPolicy: (A, A) => Boolean): Archive[A] = {
+  def unboundedNonEmpty[A](envX: Benchmark)(seeds: NonEmptyList[A], insertPolicy: (A, A) => Boolean)
+    : Archive[A] = { // ##################################### CHANGES #######################################
     val emptyArchive: Archive[A] = unbounded(insertPolicy)
-    seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
+    seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(envX)(seed)) // ##################################### CHANGES #######################################
   }
 
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PMGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  def unboundedNonEmpty[A](seeds: NonEmptyList[A], insertPolicy: (A, A, (Int, Int, Int)) => Boolean, frequencies: NonEmptyList[Int]): Archive[A] = {
-    val emptyArchive: Archive[A] = partialUnbounded(insertPolicy, frequencies)
-    seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
-  }
 }
