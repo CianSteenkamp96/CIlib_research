@@ -88,9 +88,9 @@ object MGPSO {
     particle.updatePos(particle.pos + v)
   }
 
-  private def insertIntoArchive(particle: MGParticle) =
+  private def insertIntoArchive(envX: Benchmark)(particle: MGParticle) = // #################################################### CHANGES #####################################################
     MGStep.modifyArchive { archive =>
-      archive.insert(particle)
+      archive.insert(envX)(particle) // #################################################### CHANGES #####################################################
     }
 
   def mgpso(envX: Benchmark)
@@ -98,7 +98,7 @@ object MGPSO {
     collection =>
       x =>
         for {
-          _ <- insertIntoArchive(x)
+          _ <- insertIntoArchive(envX)(x) // #################################################### CHANGES #####################################################
           cog <- pbest(x)
           soc <- gbest(envX)(x, collection)
           v <- calcVelocity(x, soc, cog, envX.controlParameters.w, envX.controlParameters.c1, envX.controlParameters.c2, envX.controlParameters.c3)
