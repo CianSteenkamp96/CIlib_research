@@ -61,22 +61,22 @@ sealed abstract class Archive[A] {
                 NonEmpty[A](l, b, c)
           }
         else {
-            envX.controlParameters.setRandomIndices_and_updateFreqs // ######################################### CHANGES / NEW ###########################################
+            envX.controlParameters.set_randomIndices_and_updateFreqs // ######################################### CHANGES / NEW ###########################################
             b match {
               case Bounded(limit, deletePolicy) =>
                 if (l.size < limit.value && l.forall(current => !c(current, v)))
                   NonEmpty[A](v :: l, b, c)
-//                  removeDominatedAndInsert(v) // #################### does cleanup make sense - pmgpso seems very SLOW - even with cleanup ..... ??????????????????????????????
+//                  .removeDominatedAndInsert(v) // #################### does cleanup make sense - pmgpso seems very SLOW - even with cleanup ..... ? get3Indices fault => note, get3Indices now faster
                 else if (l.size == limit.value && l.forall(current => !c(current, v))) {
                   val selected = deletePolicy(l)
                   NonEmpty[A](v :: l.filterNot(x => x.equals(selected)), b, c)
-//                  NonEmpty[A](v :: l.filterNot(x => x.equals(selected)), b, c).removeDominatedAndInsert(v)
+//                  .removeDominatedAndInsert(v)
                 } else
                   NonEmpty[A](l, b, c)
               case Unbounded() =>
                 if (l.forall(current => !c(current, v)))
                   NonEmpty[A](v :: l, b, c)
-//                  removeDominatedAndInsert(v)
+//                  .removeDominatedAndInsert(v)
                 else
                   NonEmpty[A](l, b, c)
             }
