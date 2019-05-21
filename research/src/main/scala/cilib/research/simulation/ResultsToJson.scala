@@ -13,7 +13,8 @@ object ResultsToJson {
         archive.values
           .map(x => "[" + x.pos.fitness.toList.mkString(",") + "]")
           .mkString(",") +
-        "], \"run\": " + run + " }\n"
+          "], \"iteration\": " + iteration + ", " +
+          ", \"run\": " + run + " }\n"
     } else ""
   }
 
