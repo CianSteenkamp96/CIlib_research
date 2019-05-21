@@ -22,10 +22,10 @@ object Main extends SafeApp {
 //      BenchmarkSuite.wfg15obj
 
 //      BenchmarkSuite.dtlz3obj
-      BenchmarkSuite.dtlz5obj
+//      BenchmarkSuite.dtlz5obj
 //      BenchmarkSuite.dtlz8obj
 //      BenchmarkSuite.dtlz10obj
-//      BenchmarkSuite.dtlz15obj
+      BenchmarkSuite.dtlz15obj
 
     val simulationsIO = benchmarkSuite.benchmarks.traverse1(benchmark => {
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -39,7 +39,7 @@ object Main extends SafeApp {
 //        LambdaStrategy.RandomIJ(bounds)
 
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      Simulation.runIO("PMGPSO", 5, lambdaStrategy, benchmark, 100, 3)
+      Simulation.runIO("PMGPSO", 15, lambdaStrategy, benchmark, 100, 3)
     })
 
     for {
