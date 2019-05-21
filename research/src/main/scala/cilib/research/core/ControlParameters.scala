@@ -11,7 +11,7 @@ case class ControlParameters(
     freqs: Option[(NonEmptyList[Int], (Int, Int, Int))] = None) // ##################################################### CHANGES ####################################################################
 {
 //  def setRandomIndices = this.copy(freqs = Some(this.freqs.get._1, (i123._1, i123._2, i123._3)))
-  def setRandomIndices_and_updateFreqs
+  def set_randomIndices_and_updateFreqs
     : ControlParameters = // ##################################################### CHANGES ####################################################################
     if (freqs.isDefined) {
       val probs: NonEmptyList[Double] = probFromFitness(fitnessFromFreq(freqs.get._1))
@@ -21,7 +21,7 @@ case class ControlParameters(
            if ((el._2 == randomIndices._1) || (el._2 == randomIndices._2) || (el._2 == randomIndices._3))
              el._1 + 1
            else el._1),
-         randomIndices)))
+         randomIndices))) // Update doesn't work / changes does not persist???
     } else
-      this.copy()
+      throw new Exception("Error: frequencies Option containing NonEmptyList of frequencies and 3 indices as Tuple is not defined.")
 }
