@@ -1,6 +1,5 @@
 // Cian Steenkamp
 
-
 package cilib.research.core
 import scalaz._
 import Scalaz._
