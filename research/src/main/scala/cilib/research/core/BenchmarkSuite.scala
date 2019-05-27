@@ -371,7 +371,7 @@ object BenchmarkSuite {
       Benchmark("DTLZ6",
                 DTLZ.DTLZ6F(5),
                 DTLZ.bounds,
-                ControlParameters(0.300, 0.90, 0.90, 1.90, NonEmptyList(30, 30, 30, 30, 30), Some((NonEmptyList[Int](0, 0, 0, 0, 0), (0, 0, 0)))))
+                ControlParameters(0.300, 0.90, 0.90, 1.90, NonEmptyList(30, 30, 30, 30, 30)))
 //      ,
 //      Benchmark("DTLZ7",
 //                DTLZ.DTLZ7F(5),
@@ -540,7 +540,7 @@ object BenchmarkSuite {
                                   1.90,
                                   NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
 //                                    10, 10), Some((NonEmptyList[Int](15, 0, 3, 0, 1, 2, 8, 7, 0, 2, 1, 1, 7, 7, 23), (0, 0, 0)))))
-                                    10, 10), Some((NonEmptyList[Int](0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 0)))))
+                                    10, 10)))
 //      ,
 //      Benchmark(
 //        "DTLZ7",
