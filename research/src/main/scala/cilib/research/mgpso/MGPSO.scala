@@ -88,17 +88,17 @@ object MGPSO {
     particle.updatePos(particle.pos + v)
   }
 
-  private def insertIntoArchive(envX: Benchmark)(particle: MGParticle) = // #################################################### CHANGES #####################################################
+  private def insertIntoArchive(pd: PartialDominance)(particle: MGParticle) = /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
     MGStep.modifyArchive { archive =>
-      archive.insert(envX)(particle) // #################################################### CHANGES #####################################################
+      archive.insert(pd)(particle) /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
     }
 
-  def mgpso(envX: Benchmark)
+  def mgpso(envX: Benchmark)(pd: PartialDominance) /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
     : NonEmptyList[MGParticle] => MGParticle => StepS[Double, MGArchive, MGParticle] =
     collection =>
       x =>
         for {
-          _ <- insertIntoArchive(envX)(x) // #################################################### CHANGES #####################################################
+          _ <- insertIntoArchive(pd)(x) /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
           cog <- pbest(x)
           soc <- gbest(envX)(x, collection)
           v <- calcVelocity(x, soc, cog, envX.controlParameters.w, envX.controlParameters.c1, envX.controlParameters.c2, envX.controlParameters.c3)
