@@ -1,6 +1,6 @@
 package cilib.research.core
 
-import cilib.research.mgpso.Dominates
+import cilib.research.mgpso.{Dominates, PartiallyDominates, PartialDominance}
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.numeric.Positive
 import scalaz.Scalaz._
@@ -20,6 +20,7 @@ final case class Unbounded() extends ArchiveBound
 
 sealed abstract class Archive[A] {
   import Archive._
+
   def values: List[A] =
     this match {
       case Empty(_, _)       => List()
@@ -39,11 +40,12 @@ sealed abstract class Archive[A] {
 //      case NonEmpty(_, _, c) => c
 //    }
 
-  def insert(envX: Benchmark)(v: A): Archive[A] =
+  def insert(pd: PartialDominance)(v: A): Archive[A] = /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
+//  def insert(envX: Benchmark)(v: A): Archive[A] =
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
       case NonEmpty(l, b, c) =>
-        if (!envX.controlParameters.freqs.isDefined)
+        if (!envX.controlParameters.freqs.isDefined) //////////////////// Changes needed ////////////////////////////////////////
           b match {
             case Bounded(limit, deletePolicy) =>
               // l.forall(x => !c(x, v)) means that there is no element in the list that dominates v
@@ -61,22 +63,19 @@ sealed abstract class Archive[A] {
                 NonEmpty[A](l, b, c)
           }
         else {
-            envX.controlParameters.set_randomIndices_and_updateFreqs // ######################################### CHANGES / NEW ###########################################
+          pd.set_randomIndices_and_updateFreqs // ######################################### CHANGES / NEW ###########################################
             b match {
               case Bounded(limit, deletePolicy) =>
                 if (l.size < limit.value && l.forall(current => !c(current, v)))
                   NonEmpty[A](v :: l, b, c)
-//                  .removeDominatedAndInsert(v) // #################### does cleanup make sense - pmgpso seems very SLOW - even with cleanup ..... ? get3Indices fault => note, get3Indices now faster
                 else if (l.size == limit.value && l.forall(current => !c(current, v))) {
                   val selected = deletePolicy(l)
                   NonEmpty[A](v :: l.filterNot(x => x.equals(selected)), b, c)
-//                  .removeDominatedAndInsert(v)
                 } else
                   NonEmpty[A](l, b, c)
               case Unbounded() =>
                 if (l.forall(current => !c(current, v)))
                   NonEmpty[A](v :: l, b, c)
-//                  .removeDominatedAndInsert(v)
                 else
                   NonEmpty[A](l, b, c)
             }
@@ -138,19 +137,19 @@ object Archive {
   def unbounded[A](insertPolicy: (A, A) => Boolean): Archive[A] =
     Empty[A](Unbounded(), insertPolicy)
 
-  def boundedNonEmpty[A](envX: Benchmark)(
-      seeds: NonEmptyList[A], // ##################################### CHANGES #######################################
+  def boundedNonEmpty[A](
+      seeds: NonEmptyList[A],
       limit: Int Refined Positive,
       insertPolicy: (A, A) => Boolean,
       deletePolicy: List[A] => A): Archive[A] = {
-    val emptyArchive: Archive[A] = bounded(limit, insertPolicy, deletePolicy)
-    seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(envX)(seed)) // ##################################### CHANGES #######################################
-  }
+        val emptyArchive: Archive[A] = bounded(limit, insertPolicy, deletePolicy)
+        seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
+      }
 
-  def unboundedNonEmpty[A](envX: Benchmark)(seeds: NonEmptyList[A], insertPolicy: (A, A) => Boolean)
-    : Archive[A] = { // ##################################### CHANGES #######################################
-    val emptyArchive: Archive[A] = unbounded(insertPolicy)
-    seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(envX)(seed)) // ##################################### CHANGES #######################################
-  }
+  def unboundedNonEmpty[A](seeds: NonEmptyList[A], insertPolicy: (A, A) => Boolean)
+    : Archive[A] = {
+      val emptyArchive: Archive[A] = unbounded(insertPolicy)
+      seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
+    }
 
 }
