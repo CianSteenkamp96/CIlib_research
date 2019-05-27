@@ -20,8 +20,9 @@ import scalaz.stream.{Process, merge}
 
 object Simulation {
 
-  def runIO(algoName: String, // New
-            numObjectives: Int, // New
+  def runIO(algoName: String, /////////////////////////// New
+            numObjectives: Int, /////////////////////////// New
+            normalMGPSO: Boolean, /////////////////////////// New
             lambdaStrategy: LambdaStrategy,
             benchmark: Benchmark,
             iterations: Int,
@@ -32,13 +33,12 @@ object Simulation {
 
         val rng = RNG.init(10L + runCount.toLong)
         val swarm = createCollection(benchmark, lambdaStrategy.evalValue(rng))
-
+        // Archive size = total population ////////////////////////// New
+        val archive = if (normalMGPSO) Archive.bounded[MGParticle](benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _), Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _), PartiallyDominates(benchmark)(PartialDominance((List.fill(numObjectives)(0)).toNel.get, (0, 1, 2))), CrowdingDistance.mostCrowded)
         val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
           Runner.foldStepS(
             placeholderENV,
-            /////////////////////////////////////////////////////// HERE ////////////////////////////////////////////////////////////////////////////////////
-//            Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded),
-            Archive.bounded[MGParticle](150, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded),
+            archive,
             rng,
             swarm,
             Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark))),
