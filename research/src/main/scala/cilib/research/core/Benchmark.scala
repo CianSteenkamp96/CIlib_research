@@ -13,7 +13,6 @@ case class Benchmark(name: String,
                      f: NonEmptyList[Double] => NonEmptyList[Double],
                      bounds: NonEmptyList[Interval[Double]],
                      controlParameters: ControlParameters) {
-
   val opt = Min
 
   def compareDoubles(x: Double, y: Double): Boolean = x < y
