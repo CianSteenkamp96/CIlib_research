@@ -10,7 +10,9 @@ import cilib.research.mgpso.MGParticle._
 import cilib.research.mgpso._
 import cilib.research.{MGArchive, _}
 import cilib.{Iteration, _}
+import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
+import eu.timepit.refined.numeric.Positive
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
@@ -20,39 +22,47 @@ import scalaz.stream.{Process, merge}
 
 object Simulation {
 
-  def runIO(lambdaStrategy: LambdaStrategy,
+  def runIO(algoName: String, /////////////////////////// New
+            numObjectives: Int, /////////////////////////// New
+            lambdaStrategy: LambdaStrategy,
             benchmark: Benchmark,
             iterations: Int,
-            independentRuns: Int) =
+            independentRuns: Int): IO[Unit] =
     for {
-      _ <- IO(clearFile(lambdaStrategy.name + "." + benchmark.name))
+      _ <- IO(clearFile(algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + numObjectives + "obj"))
       _ <- (1 to independentRuns).toList.traverse(runCount => {
 
         val rng = RNG.init(10L + runCount.toLong)
         val swarm = createCollection(benchmark, lambdaStrategy.evalValue(rng))
 
+
+        // Archive size = total population ////////////////////////// New ///////////////////////////////
+        /////////////////////////////////////////////// CHANGES REQUIRED //////////////////////////////////////////////////
+//        val popSize: Int Refined Positive = benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _)
+
+        val archive = if (benchmark.freqs_and_indices.normalMGPSO) Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](150, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded)
         val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
           Runner.foldStepS(
             placeholderENV,
-            Archive.bounded[MGParticle](50, Dominates(benchmark), CrowdingDistance.mostCrowded),
+            archive,
             rng,
             swarm,
-            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark))),
+            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark))), /////////////// NEW ////////////////////////
             benchmark.toStaticProblem,
             (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
           )
         }
 
         val measured: Process[Task, Process[Task, Measurement[String]]] =
-          Process.emitAll(List(simulation).map(_.take(iterations).pipe(measurement(runCount))))
+          Process.emitAll(List(simulation).map(_.take(iterations).pipe(measurement(runCount, iterations))))
 
         val stream = merge
           .mergeN(20)(measured)
-          .to(csvSinkAppend[String](new File(lambdaStrategy.name + "." + benchmark.name)))
+          .to(csvSinkAppend[String](new File(algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + numObjectives + "obj")))
           .run
 
         for {
-          _ <- putStr(List(lambdaStrategy.name, benchmark.name, runCount).mkString(" - "))
+          _ <- putStr(List(algoName, lambdaStrategy.name, benchmark.name, numObjectives + "obj", runCount).mkString(" - "))
           timeTaken <- IO {
             val start = System.nanoTime()
             stream.unsafePerformSync
@@ -65,13 +75,11 @@ object Simulation {
       })
     } yield ()
 
-  private def measurement(run: Int) =
+  private def measurement(run: Int, maxIterations: Int) =
     measureWithInfo[(MGArchive, NonEmptyList[MGParticle]), Unit, String]((info, collection) =>
-      ResultsToJson.finalArchive(run, info.iteration, collection._1))
+      ResultsToJson.finalArchive(run, info.iteration, collection._1, maxIterations))
 
-  //ResultsToJson.archiveWithParticles(run, info.iteration, collection._1, collection._2))
-
-  private def clearFile(fileName: String) = {
+  private def clearFile(fileName: String): Unit = {
     val fileWriter = new java.io.PrintWriter(new File(fileName))
     fileWriter.println("")
   }

@@ -13,7 +13,7 @@ object Dominates {
         .foldLeft(0)((a, c) =>
           a + {
             if (envX.compareDoubles(c._1, c._2)) {
-              check = true
+              check = true // flag to check that @ least one strictly better
               0
             } else if (c._1 == c._2) 0
             else 1

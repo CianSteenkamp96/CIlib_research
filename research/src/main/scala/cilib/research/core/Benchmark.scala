@@ -3,6 +3,7 @@ package cilib.research.core
 import cilib._
 import cilib.exec._
 import cilib.research._
+import cilib.research.mgpso.PartialDominance
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
@@ -12,9 +13,12 @@ import spire.math._
 case class Benchmark(name: String,
                      f: NonEmptyList[Double] => NonEmptyList[Double],
                      bounds: NonEmptyList[Interval[Double]],
-                     controlParameters: ControlParameters) {
+                     controlParameters: ControlParameters,
+                     freqs_and_indices: PartialDominance) { ////////////////////////////// CHANGES ////////////////////////////
+  def update: Benchmark =
+    this.copy(freqs_and_indices = freqs_and_indices.set_randomIndices_and_updateFreqs) ////////////////////////////// CHANGES ////////////////////////////
 
-  val opt = Min
+  val opt: Min.type = Min
 
   def compareDoubles(x: Double, y: Double): Boolean = x < y
 
