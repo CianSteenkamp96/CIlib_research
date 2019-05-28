@@ -4,6 +4,7 @@ package research
 import cilib.research.core.BenchmarkSuite
 import cilib.research.mgpso.LambdaStrategy
 import cilib.research.simulation.Simulation
+import scalaz.Scalaz._
 import scalaz._
 import scalaz.effect.IO._
 import scalaz.effect.{IO, SafeApp}
