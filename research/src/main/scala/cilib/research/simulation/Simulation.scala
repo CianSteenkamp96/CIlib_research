@@ -41,8 +41,8 @@ object Simulation {
 //        val popSize: Int Refined Positive = benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _)
 
 
-        val pd = PartialDominance((List.fill(numObjectives)(0)).toNel.get, (0, 1, 2), normalMGPSO) ////////////////////////// New ///////////////////////////////
-        val pd2 = PartialDominance((List.fill(numObjectives)(1)).toNel.get, (3, 4, 5), normalMGPSO) ////////////////////////// New ///////////////////////////////
+        val pd = PartialDominance(List.fill(numObjectives)(0).toNel.get, (0, 1, 2), normalMGPSO) ////////////////////////// New ///////////////////////////////
+        val pd2 = PartialDominance(List.fill(numObjectives)(1).toNel.get, (3, 4, 5), normalMGPSO) ////////////////////////// New ///////////////////////////////
 //        val archive = if (normalMGPSO) Archive.bounded[MGParticle](popSize, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](popSize, PartiallyDominates(benchmark)(pd), CrowdingDistance.mostCrowded)
         val archive = if (normalMGPSO) Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](150, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded)
         val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
