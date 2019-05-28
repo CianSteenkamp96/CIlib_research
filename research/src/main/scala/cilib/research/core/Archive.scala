@@ -40,12 +40,12 @@ sealed abstract class Archive[A] {
 //      case NonEmpty(_, _, c) => c
 //    }
 
-  def insert(pd: PartialDominance)(v: A): Archive[A] = /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
+  def insert(pd: PartialDominance)(v: A): Archive[A] = // ##################################### CHANGES #######################################
 //  def insert(envX: Benchmark)(v: A): Archive[A] =
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
       case NonEmpty(l, b, c) =>
-        if (!envX.controlParameters.freqs.isDefined) //////////////////// Changes needed ////////////////////////////////////////
+        if (pd.normalMGPSO) // ##################################### CHANGES #######################################
           b match {
             case Bounded(limit, deletePolicy) =>
               // l.forall(x => !c(x, v)) means that there is no element in the list that dominates v
@@ -137,19 +137,18 @@ object Archive {
   def unbounded[A](insertPolicy: (A, A) => Boolean): Archive[A] =
     Empty[A](Unbounded(), insertPolicy)
 
-  def boundedNonEmpty[A](
+  def boundedNonEmpty[A](pd: PartialDominance)( // ##################################### CHANGES #######################################
       seeds: NonEmptyList[A],
       limit: Int Refined Positive,
       insertPolicy: (A, A) => Boolean,
       deletePolicy: List[A] => A): Archive[A] = {
         val emptyArchive: Archive[A] = bounded(limit, insertPolicy, deletePolicy)
-        seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
+        seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(pd)(seed)) // ##################################### CHANGES #######################################
       }
 
-  def unboundedNonEmpty[A](seeds: NonEmptyList[A], insertPolicy: (A, A) => Boolean)
+  def unboundedNonEmpty[A](pd: PartialDominance)(seeds: NonEmptyList[A], insertPolicy: (A, A) => Boolean) // ##################################### CHANGES #######################################
     : Archive[A] = {
       val emptyArchive: Archive[A] = unbounded(insertPolicy)
-      seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
+      seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(pd)(seed)) // ##################################### CHANGES #######################################
     }
-
 }
