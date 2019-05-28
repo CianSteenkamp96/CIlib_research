@@ -40,7 +40,7 @@ sealed abstract class Archive[A] {
 //      case NonEmpty(_, _, c) => c
 //    }
 
-  def insert(pd: PartialDominance)(v: A): Archive[A] = // ##################################### CHANGES #######################################
+  def insert(v: A)(pd: PartialDominance): Archive[A] = // ##################################### CHANGES #######################################
 //  def insert(envX: Benchmark)(v: A): Archive[A] =
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
@@ -49,15 +49,15 @@ sealed abstract class Archive[A] {
           b match {
             case Bounded(limit, deletePolicy) =>
               // l.forall(x => !c(x, v)) means that there is no element in the list that dominates v
-              if (l.size < limit.value && l.forall(x => !c(x, v)))
+              if (l.size < limit.value && l.forall(x => !c(x, v, None)))
                 removeDominatedAndInsert(v)
-              else if (l.size == limit.value && l.forall(x => !c(x, v))) {
+              else if (l.size == limit.value && l.forall(x => !c(x, v, None))) {
                 val selected = deletePolicy(l)
                 NonEmpty[A](l.filterNot(x => x.equals(selected)), b, c).removeDominatedAndInsert(v)
               } else
                 NonEmpty[A](l, b, c)
             case Unbounded() =>
-              if (l.forall(x => !c(x, v)))
+              if (l.forall(x => !c(x, v, None)))
                 removeDominatedAndInsert(v)
               else
                 NonEmpty[A](l, b, c)
@@ -66,15 +66,15 @@ sealed abstract class Archive[A] {
           pd.set_randomIndices_and_updateFreqs // ######################################### CHANGES / NEW ###########################################
             b match {
               case Bounded(limit, deletePolicy) =>
-                if (l.size < limit.value && l.forall(current => !c(current, v)))
+                if (l.size < limit.value && l.forall(current => !c(current, v, Some(pd))))
                   NonEmpty[A](v :: l, b, c)
-                else if (l.size == limit.value && l.forall(current => !c(current, v))) {
+                else if (l.size == limit.value && l.forall(current => !c(current, v, Some(pd)))) {
                   val selected = deletePolicy(l)
                   NonEmpty[A](v :: l.filterNot(x => x.equals(selected)), b, c)
                 } else
                   NonEmpty[A](l, b, c)
               case Unbounded() =>
-                if (l.forall(current => !c(current, v)))
+                if (l.forall(current => !c(current, v, Some(pd))))
                   NonEmpty[A](v :: l, b, c)
                 else
                   NonEmpty[A](l, b, c)
@@ -88,7 +88,7 @@ sealed abstract class Archive[A] {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
       case NonEmpty(l, b, c) =>
         val dominated =
-          l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
+          l.foldLeft(List[A]())((acc, current) => if (c(v, current, None)) current :: acc else acc)
         NonEmpty[A](v :: l.filterNot(dominated.contains), b, c)
     }
 
@@ -98,7 +98,7 @@ sealed abstract class Archive[A] {
       case Empty(_, _) => List[A]()
       case NonEmpty(_, _, c) =>
         val dominated =
-          l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
+          l.foldLeft(List[A]())((acc, current) => if (c(v, current, None)) current :: acc else acc)
         l.filterNot(dominated.contains)
     }
 
@@ -122,33 +122,33 @@ sealed abstract class Archive[A] {
 }
 
 object Archive {
-  private final case class Empty[A](b: ArchiveBound, insertPolicy: (A, A) => Boolean)
+  private final case class Empty[A](b: ArchiveBound, insertPolicy: (A, A, Option[PartialDominance]) => Boolean)
       extends Archive[A]
 
-  private final case class NonEmpty[A](l: List[A], b: ArchiveBound, insertPolicy: (A, A) => Boolean)
+  private final case class NonEmpty[A](l: List[A], b: ArchiveBound, insertPolicy: (A, A, Option[PartialDominance]) => Boolean)
       extends Archive[A]
 
   // Let user create bounded instance - Gary ?
   def bounded[A](limit: Int Refined Positive,
-                 insertPolicy: (A, A) => Boolean,
+                 insertPolicy: (A, A, Option[PartialDominance]) => Boolean,
                  deletePolicy: List[A] => A): Archive[A] =
     Empty[A](Bounded(limit, deletePolicy), insertPolicy)
 
-  def unbounded[A](insertPolicy: (A, A) => Boolean): Archive[A] =
+  def unbounded[A](insertPolicy: (A, A, Option[PartialDominance]) => Boolean): Archive[A] =
     Empty[A](Unbounded(), insertPolicy)
 
   def boundedNonEmpty[A](pd: PartialDominance)( // ##################################### CHANGES #######################################
       seeds: NonEmptyList[A],
       limit: Int Refined Positive,
-      insertPolicy: (A, A) => Boolean,
+      insertPolicy: (A, A, Option[PartialDominance]) => Boolean,
       deletePolicy: List[A] => A): Archive[A] = {
         val emptyArchive: Archive[A] = bounded(limit, insertPolicy, deletePolicy)
-        seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(pd)(seed)) // ##################################### CHANGES #######################################
+        seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed)(pd)) // ##################################### CHANGES #######################################
       }
 
-  def unboundedNonEmpty[A](pd: PartialDominance)(seeds: NonEmptyList[A], insertPolicy: (A, A) => Boolean) // ##################################### CHANGES #######################################
+  def unboundedNonEmpty[A](pd: PartialDominance)(seeds: NonEmptyList[A], insertPolicy: (A, A, Option[PartialDominance]) => Boolean) // ##################################### CHANGES #######################################
     : Archive[A] = {
       val emptyArchive: Archive[A] = unbounded(insertPolicy)
-      seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(pd)(seed)) // ##################################### CHANGES #######################################
+      seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed)(pd)) // ##################################### CHANGES #######################################
     }
 }
