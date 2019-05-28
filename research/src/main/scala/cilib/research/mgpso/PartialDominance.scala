@@ -14,5 +14,5 @@ case class PartialDominance(freqs: NonEmptyList[Int], i123: (Int, Int, Int), nor
 						el._1 + 1
 					else el._1)
 			this.copy(freqs = newFreqs, i123 = randomIndices)
-  	}
+  }
 }

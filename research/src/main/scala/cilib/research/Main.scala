@@ -14,7 +14,7 @@ object Main extends SafeApp {
   // args -> lambda strategy, benchmark suite
   override def run(args: ImmutableArray[String]): IO[Unit] = {
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     val benchmarkSuite =
 //      BenchmarkSuite.wfg3obj
 //      BenchmarkSuite.wfg5obj
@@ -29,7 +29,7 @@ object Main extends SafeApp {
       BenchmarkSuite.dtlz15obj
 
     val simulationsIO = benchmarkSuite.benchmarks.traverse1(benchmark => {
-      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       val bounds = benchmark.bounds
       val lambdaStrategy =
         LambdaStrategy.Standard(bounds)
@@ -39,8 +39,8 @@ object Main extends SafeApp {
 //        LambdaStrategy.RandomI(bounds)
 //        LambdaStrategy.RandomIJ(bounds)
 
-      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      Simulation.runIO("PMGPSO", 15, lambdaStrategy, benchmark, 100, 3)
+      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      Simulation.runIO("PMGPSO", 15, normalMGPSO = false, lambdaStrategy, benchmark, 100, 3)
     })
 
     for {

@@ -22,8 +22,9 @@ import scalaz.stream.{Process, merge}
 
 object Simulation {
 
-  def runIO(algoName: String, /////////////////////////// New
-            numObjectives: Int, /////////////////////////// New
+  def runIO(algoName: String, /////////////////////////// New //////////////////////////////////
+            numObjectives: Int, /////////////////////////// New //////////////////////////////////
+            normalMGPSO: Boolean, /////////////////////////// New //////////////////////////////////
             lambdaStrategy: LambdaStrategy,
             benchmark: Benchmark,
             iterations: Int,
@@ -35,19 +36,20 @@ object Simulation {
         val rng = RNG.init(10L + runCount.toLong)
         val swarm = createCollection(benchmark, lambdaStrategy.evalValue(rng))
 
-
-        // Archive size = total population ////////////////////////// New ///////////////////////////////
+        // Archive size/limit = total population ////////////////////////// New ///////////////////////////////
         /////////////////////////////////////////////// CHANGES REQUIRED //////////////////////////////////////////////////
 //        val popSize: Int Refined Positive = benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _)
 
-        val archive = if (benchmark.freqs_and_indices.normalMGPSO) Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](150, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded)
+        val pd = PartialDominance((List.fill(numObjectives)(0)).toNel.get, (0, 1, 2), normalMGPSO) ////////////////////////// New ///////////////////////////////
+//        val archive = if (normalMGPSO) Archive.bounded[MGParticle](popSize, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](popSize, PartiallyDominates(benchmark)(pd), CrowdingDistance.mostCrowded)
+        val archive = if (normalMGPSO) Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](150, PartiallyDominates(benchmark)(pd), CrowdingDistance.mostCrowded)
         val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
           Runner.foldStepS(
             placeholderENV,
             archive,
             rng,
             swarm,
-            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark))), /////////////// NEW ////////////////////////
+            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark)(pd))), /////////////// NEW ////////////////////////
             benchmark.toStaticProblem,
             (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
           )

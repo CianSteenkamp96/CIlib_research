@@ -1,5 +1,6 @@
 package cilib.research.core
 
+import cilib.research.mgpso.PartialDominance
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.numeric.Positive
 import scalaz.Scalaz._
@@ -14,8 +15,8 @@ final case class Unbounded() extends ArchiveBound
 // l is all our solutions
 // b is our capacity of 50 with a crowding distance delete policy
 // c is a our Dominates insert policy so
-// c(v, x) means "does v dominate x"
-// !c(v, x) means "does v not dominate x"
+//  c(v, x) means "does v dominate x"
+//  !c(v, x) means "does v not dominate x"
 
 sealed abstract class Archive[A] {
   import Archive._
@@ -32,19 +33,11 @@ sealed abstract class Archive[A] {
       case NonEmpty(_, b, _) => b
     }
 
-// Unnecessary according to Gary
-//  def insertCondition: (A, A) => Boolean =
-//    this match {
-//      case Empty(_, c)       => c
-//      case NonEmpty(_, _, c) => c
-//    }
-
-  def insert(envX: Benchmark)(v: A): Archive[A] = // ##################################### CHANGES #######################################
-//  def insert(envX: Benchmark)(v: A): Archive[A] =
+  def insert(pd: PartialDominance)(v: A): Archive[A] = // ##################################### CHANGES #######################################
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
       case NonEmpty(l, b, c) =>
-        if (envX.freqs_and_indices.normalMGPSO) // ##################################### CHANGES #######################################
+        if (pd.normalMGPSO) // ##################################### CHANGES #######################################
           b match {
             case Bounded(limit, deletePolicy) =>
               // l.forall(x => !c(x, v)) means that there is no element in the list that dominates v
@@ -62,7 +55,7 @@ sealed abstract class Archive[A] {
                 NonEmpty[A](l, b, c)
           }
         else {
-            envX.update // ######################################### CHANGES / NEW ###########################################
+          pd.set_randomIndices_and_updateFreqs // ######################################### CHANGES / NEW ###########################################
             b match {
               case Bounded(limit, deletePolicy) =>
                 if (l.size < limit.value && l.forall(current => !c(current, v)))
@@ -136,18 +129,18 @@ object Archive {
   def unbounded[A](insertPolicy: (A, A) => Boolean): Archive[A] =
     Empty[A](Unbounded(), insertPolicy)
 
-  def boundedNonEmpty[A](envX: Benchmark)( // ##################################### CHANGES #######################################
+  def boundedNonEmpty[A](pd: PartialDominance)( // ##################################### CHANGES #######################################
       seeds: NonEmptyList[A],
       limit: Int Refined Positive,
       insertPolicy: (A, A) => Boolean,
       deletePolicy: List[A] => A): Archive[A] = {
         val emptyArchive: Archive[A] = bounded(limit, insertPolicy, deletePolicy)
-        seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(envX)(seed)) // ##################################### CHANGES #######################################
+        seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(pd)(seed)) // ##################################### CHANGES #######################################
       }
 
-  def unboundedNonEmpty[A](envX: Benchmark)(seeds: NonEmptyList[A], insertPolicy: (A, A) => Boolean) // ##################################### CHANGES #######################################
+  def unboundedNonEmpty[A](pd: PartialDominance)(seeds: NonEmptyList[A], insertPolicy: (A, A) => Boolean) // ##################################### CHANGES #######################################
     : Archive[A] = {
       val emptyArchive: Archive[A] = unbounded(insertPolicy)
-      seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(envX)(seed)) // ##################################### CHANGES #######################################
+      seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(pd)(seed)) // ##################################### CHANGES #######################################
     }
 }
