@@ -4,7 +4,7 @@ import scalaz._
 import Scalaz._
 import cilib.research.core.GetIndices._
 
-case class PartialDominance(freqs: NonEmptyList[Int], i123: (Int, Int, Int)) // ##################################################### NEW ####################################################################
+case class PartialDominance(freqs: NonEmptyList[Int], i123: (Int, Int, Int), normalMGPSO: Boolean) // ##################################################### NEW ####################################################################
 {
 		def set_randomIndices_and_updateFreqs: PartialDominance = {
 			val probs: NonEmptyList[Double] = probFromFitness(fitnessFromFreq(freqs))
