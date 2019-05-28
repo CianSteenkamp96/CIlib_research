@@ -10,7 +10,9 @@ import cilib.research.mgpso.MGParticle._
 import cilib.research.mgpso._
 import cilib.research.{MGArchive, _}
 import cilib.{Iteration, _}
+import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
+import eu.timepit.refined.numeric.Positive
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
@@ -33,15 +35,24 @@ object Simulation {
 
         val rng = RNG.init(10L + runCount.toLong)
         val swarm = createCollection(benchmark, lambdaStrategy.evalValue(rng))
-        // Archive size = total population ////////////////////////// New
-        val archive = if (normalMGPSO) Archive.bounded[MGParticle](benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _), Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _), PartiallyDominates(benchmark)(PartialDominance((List.fill(numObjectives)(0)).toNel.get, (0, 1, 2))), CrowdingDistance.mostCrowded)
+        // Archive size = total population ////////////////////////// New ///////////////////////////////
+
+
+
+        /////////////////////////////////////////////// CHANGES REQUIRED //////////////////////////////////////////////////
+//        val popSize: Int Refined Positive = benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _)
+
+
+        val pd = PartialDominance((List.fill(numObjectives)(0)).toNel.get, (0, 1, 2), normalMGPSO) ////////////////////////// New ///////////////////////////////
+//        val archive = if (normalMGPSO) Archive.bounded[MGParticle](popSize, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](popSize, PartiallyDominates(benchmark)(pd), CrowdingDistance.mostCrowded)
+        val archive = if (normalMGPSO) Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](150, PartiallyDominates(benchmark)(pd), CrowdingDistance.mostCrowded)
         val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
           Runner.foldStepS(
             placeholderENV,
             archive,
             rng,
             swarm,
-            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark))),
+            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark)(pd))), /////////////// NEW ////////////////////////
             benchmark.toStaticProblem,
             (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
           )
