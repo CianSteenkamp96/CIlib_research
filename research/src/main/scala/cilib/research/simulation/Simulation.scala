@@ -10,9 +10,7 @@ import cilib.research.mgpso.MGParticle._
 import cilib.research.mgpso._
 import cilib.research.{MGArchive, _}
 import cilib.{Iteration, _}
-import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
-import eu.timepit.refined.numeric.Positive
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
@@ -44,15 +42,16 @@ object Simulation {
 
 
         val pd = PartialDominance((List.fill(numObjectives)(0)).toNel.get, (0, 1, 2), normalMGPSO) ////////////////////////// New ///////////////////////////////
+        val pd2 = PartialDominance((List.fill(numObjectives)(1)).toNel.get, (3, 4, 5), normalMGPSO) ////////////////////////// New ///////////////////////////////
 //        val archive = if (normalMGPSO) Archive.bounded[MGParticle](popSize, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](popSize, PartiallyDominates(benchmark)(pd), CrowdingDistance.mostCrowded)
-        val archive = if (normalMGPSO) Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](150, PartiallyDominates(benchmark)(pd), CrowdingDistance.mostCrowded)
+        val archive = if (normalMGPSO) Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](150, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded)
         val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
           Runner.foldStepS(
             placeholderENV,
             archive,
             rng,
             swarm,
-            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark)(pd))), /////////////// NEW ////////////////////////
+            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark)(pd2))), /////////////// NEW ////////////////////////
             benchmark.toStaticProblem,
             (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
           )
