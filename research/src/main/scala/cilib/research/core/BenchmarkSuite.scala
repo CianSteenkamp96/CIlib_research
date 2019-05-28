@@ -6,7 +6,7 @@ import scalaz.NonEmptyList
 
 case class BenchmarkSuite(name: String, benchmarks: NonEmptyList[Benchmark])
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE CONFIGS HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 object BenchmarkSuite {
 
   val wfg3obj = BenchmarkSuite(

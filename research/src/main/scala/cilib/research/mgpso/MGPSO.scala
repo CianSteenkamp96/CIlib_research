@@ -89,24 +89,38 @@ object MGPSO {
   }
 
   private def insertIntoArchive(pd: PartialDominance)(particle: MGParticle) = /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
+  {
+//    pd.set_randomIndices_and_updateFreqs
     MGStep.modifyArchive { archive =>
+//      pd.set_randomIndices_and_updateFreqs
+//      archive.insert(pd.set_randomIndices_and_updateFreqs)(particle) /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
       archive.insert(pd)(particle) /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
     }
+  }
 
   def mgpso(envX: Benchmark)(pd: PartialDominance) /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
     : NonEmptyList[MGParticle] => MGParticle => StepS[Double, MGArchive, MGParticle] =
-    collection =>
-      x =>
-        for {
-          _ <- insertIntoArchive(pd)(x) /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
-          cog <- pbest(x)
-          soc <- gbest(envX)(x, collection)
-          v <- calcVelocity(x, soc, cog, envX.controlParameters.w, envX.controlParameters.c1, envX.controlParameters.c2, envX.controlParameters.c3)
-          p <- stdPosition(x, v)
-          p2 <- multiEval(envX)(p)
-          p3 <- updateVelocity(p2, v)
-          p4 <- updateLambda(p3)
-          updated <- updatePBestBounds(envX)(p4)
-        } yield updated
+    {
+//      pd.set_randomIndices_and_updateFreqs
+      collection => x =>
+      for {
+        _ <- insertIntoArchive(pd)(x) /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
+//        _ <- insertIntoArchive(pd.set_randomIndices_and_updateFreqs)(x) /////////////////////////////////////////////// CHANGES //////////////////////////////////////////
+        cog <- pbest(x)
+        soc <- gbest(envX)(x, collection)
+        v <- calcVelocity(x,
+                          soc,
+                          cog,
+                          envX.controlParameters.w,
+                          envX.controlParameters.c1,
+                          envX.controlParameters.c2,
+                          envX.controlParameters.c3)
+        p <- stdPosition(x, v)
+        p2 <- multiEval(envX)(p)
+        p3 <- updateVelocity(p2, v)
+        p4 <- updateLambda(p3)
+        updated <- updatePBestBounds(envX)(p4)
+      } yield updated
+    }
 
 }

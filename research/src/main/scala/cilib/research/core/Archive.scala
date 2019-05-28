@@ -1,13 +1,11 @@
 package cilib.research.core
 
 import cilib.research.mgpso.PartialDominance
-import eu.timepit.refined.api.Refined
-import eu.timepit.refined.numeric.Positive
 import scalaz.Scalaz._
 import scalaz._
 
 sealed trait ArchiveBound
-final case class Bounded[A](limit: Int Refined Positive, deletePolicy: List[A] => A)
+final case class Bounded[A](limit: Int, deletePolicy: List[A] => A) // ##################################### CHANGES #######################################
     extends ArchiveBound
 final case class Unbounded() extends ArchiveBound
 
@@ -34,6 +32,8 @@ sealed abstract class Archive[A] {
     }
 
   def insert(pd: PartialDominance)(v: A): Archive[A] = // ##################################### CHANGES #######################################
+  {
+//    pd.set_randomIndices_and_updateFreqs
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
       case NonEmpty(l, b, c) =>
@@ -41,9 +41,9 @@ sealed abstract class Archive[A] {
           b match {
             case Bounded(limit, deletePolicy) =>
               // l.forall(x => !c(x, v)) means that there is no element in the list that dominates v
-              if (l.size < limit.value && l.forall(x => !c(x, v)))
+              if (l.size < limit && l.forall(x => !c(x, v))) // ##################################### CHANGES #######################################
                 removeDominatedAndInsert(v)
-              else if (l.size == limit.value && l.forall(x => !c(x, v))) {
+              else if (l.size == limit && l.forall(x => !c(x, v))) { // ##################################### CHANGES #######################################
                 val selected = deletePolicy(l)
                 NonEmpty[A](l.filterNot(x => x.equals(selected)), b, c).removeDominatedAndInsert(v)
               } else
@@ -56,23 +56,24 @@ sealed abstract class Archive[A] {
           }
         else {
           pd.set_randomIndices_and_updateFreqs // ######################################### CHANGES / NEW ###########################################
-            b match {
-              case Bounded(limit, deletePolicy) =>
-                if (l.size < limit.value && l.forall(current => !c(current, v)))
-                  NonEmpty[A](v :: l, b, c)
-                else if (l.size == limit.value && l.forall(current => !c(current, v))) {
-                  val selected = deletePolicy(l)
-                  NonEmpty[A](v :: l.filterNot(x => x.equals(selected)), b, c)
-                } else
-                  NonEmpty[A](l, b, c)
-              case Unbounded() =>
-                if (l.forall(current => !c(current, v)))
-                  NonEmpty[A](v :: l, b, c)
-                else
-                  NonEmpty[A](l, b, c)
-            }
+          b match {
+            case Bounded(limit, deletePolicy) =>
+              if (l.size < limit && l.forall(current => !c(current, v))) // ##################################### CHANGES #######################################
+                NonEmpty[A](v :: l, b, c)
+              else if (l.size == limit && l.forall(current => !c(current, v))) { // ##################################### CHANGES #######################################
+                val selected = deletePolicy(l)
+                NonEmpty[A](v :: l.filterNot(x => x.equals(selected)), b, c)
+              } else
+                NonEmpty[A](l, b, c)
+            case Unbounded() =>
+              if (l.forall(current => !c(current, v)))
+                NonEmpty[A](v :: l, b, c)
+              else
+                NonEmpty[A](l, b, c)
+          }
         }
     }
+  }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY MGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   protected def removeDominatedAndInsert(v: A): Archive[A] =
@@ -121,21 +122,28 @@ object Archive {
       extends Archive[A]
 
   // Let user create bounded instance - Gary ?
-  def bounded[A](limit: Int Refined Positive,
+  def bounded[A](limit: Int, // ##################################### CHANGES #######################################
                  insertPolicy: (A, A) => Boolean,
                  deletePolicy: List[A] => A): Archive[A] =
-    Empty[A](Bounded(limit, deletePolicy), insertPolicy)
+    if (limit > 0) // ##################################### CHANGES #######################################
+      Empty[A](Bounded(limit, deletePolicy), insertPolicy)
+    else
+      throw new Exception("Archive limit must be > 0.")
 
   def unbounded[A](insertPolicy: (A, A) => Boolean): Archive[A] =
     Empty[A](Unbounded(), insertPolicy)
 
   def boundedNonEmpty[A](pd: PartialDominance)( // ##################################### CHANGES #######################################
       seeds: NonEmptyList[A],
-      limit: Int Refined Positive,
+      limit: Int, // ##################################### CHANGES #######################################
       insertPolicy: (A, A) => Boolean,
       deletePolicy: List[A] => A): Archive[A] = {
-        val emptyArchive: Archive[A] = bounded(limit, insertPolicy, deletePolicy)
-        seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(pd)(seed)) // ##################################### CHANGES #######################################
+        if (limit > 0) { // ##################################### CHANGES #######################################
+          val emptyArchive: Archive[A] = bounded(limit, insertPolicy, deletePolicy)
+          seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(pd)(seed)) // ##################################### CHANGES #######################################
+        }else
+          throw new Exception("Archive limit must be > 0.")
+
       }
 
   def unboundedNonEmpty[A](pd: PartialDominance)(seeds: NonEmptyList[A], insertPolicy: (A, A) => Boolean) // ##################################### CHANGES #######################################
