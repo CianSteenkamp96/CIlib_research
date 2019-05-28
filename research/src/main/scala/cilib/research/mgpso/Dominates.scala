@@ -3,7 +3,7 @@ import cilib.research.core.Benchmark
 import scalaz.Scalaz._
 
 object Dominates {
-  def apply(envX: Benchmark)(particleA: MGParticle, particleB: MGParticle): Boolean =
+  def apply(envX: Benchmark)(particleA: MGParticle, particleB: MGParticle, notUsed: Option[PartialDominance]): Boolean =
     if (particleA.pos.fitness == particleB.pos.fitness) {
       false
     } else {
