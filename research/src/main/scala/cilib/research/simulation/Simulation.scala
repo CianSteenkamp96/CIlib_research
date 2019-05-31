@@ -40,7 +40,7 @@ object Simulation {
         /////////////////////////////////////////////// CHANGES //////////////////////////////////////////////////
         val popSize: Int = benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _)
 
-        val pd = PartialDominance((List.fill(numObjectives)(0)).toNel.get, (0, 1, 2), normalMGPSO) ////////////////////////// New ///////////////////////////////
+        val pd = PartialDominance.partialDominance((List.fill(numObjectives)(0)).toNel.get, (0, 1, 2), normalMGPSO) ////////////////////////// New ///////////////////////////////
         val archive = if (normalMGPSO) Archive.bounded[MGParticle](popSize, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](popSize, PartiallyDominates(benchmark)(pd), CrowdingDistance.mostCrowded)
 //        val archive = if (normalMGPSO) Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.bounded[MGParticle](150, PartiallyDominates(benchmark)(pd), CrowdingDistance.mostCrowded)
 
@@ -50,8 +50,8 @@ object Simulation {
             archive,
             rng,
             swarm,
-//            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark)(pd))), /////////////// NEW ////////////////////////
-            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark)(PartialDominance((List.fill(numObjectives)(0)).toNel.get, (0, 1, 2), normalMGPSO)))), /////////////// NEW ////////////////////////
+            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark)(pd))), /////////////// NEW ////////////////////////
+//            Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.mgpso(benchmark)(PartialDominance((List.fill(numObjectives)(0)).toNel.get, (0, 1, 2), normalMGPSO)))), /////////////// NEW ////////////////////////
             benchmark.toStaticProblem,
             (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
           )

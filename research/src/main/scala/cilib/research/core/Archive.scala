@@ -37,7 +37,7 @@ sealed abstract class Archive[A] {
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
       case NonEmpty(l, b, c) =>
-        if (pd.normalMGPSO) // ##################################### CHANGES #######################################
+        if (pd.normal) // ##################################### CHANGES #######################################
           b match {
             case Bounded(limit, deletePolicy) =>
               // l.forall(x => !c(x, v)) means that there is no element in the list that dominates v

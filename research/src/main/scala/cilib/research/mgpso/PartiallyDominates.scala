@@ -12,8 +12,8 @@ object PartiallyDominates { // no longer check for 3 obj since the way the rando
 			var check = false
 
 			// the 3 random indices readily available (even if only 3 obj)
-			val partialParticleA = List[Double](particleA.pos.fitness.toList(freqs_and_indices.i123._1), particleA.pos.fitness.toList(freqs_and_indices.i123._2), particleA.pos.fitness.toList(freqs_and_indices.i123._3))
-			val partialParticleB = List[Double](particleA.pos.fitness.toList(freqs_and_indices.i123._1), particleA.pos.fitness.toList(freqs_and_indices.i123._2), particleA.pos.fitness.toList(freqs_and_indices.i123._3))
+			val partialParticleA = List[Double](particleA.pos.fitness.toList(freqs_and_indices.getIndices._1), particleA.pos.fitness.toList(freqs_and_indices.getIndices._2), particleA.pos.fitness.toList(freqs_and_indices.getIndices._3))
+			val partialParticleB = List[Double](particleA.pos.fitness.toList(freqs_and_indices.getIndices._1), particleA.pos.fitness.toList(freqs_and_indices.getIndices._2), particleA.pos.fitness.toList(freqs_and_indices.getIndices._3))
 
 			partialParticleA.zip(partialParticleB).foldLeft(0)(
 				(a, c) => a +
