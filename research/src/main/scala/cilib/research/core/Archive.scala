@@ -31,12 +31,6 @@ sealed abstract class Archive[A] {
       case NonEmpty(_, b, _) => b
     }
 
-  def insertCondition: (A, A) => Boolean =
-    this match {
-      case Empty(_, c)       => c
-      case NonEmpty(_, _, c) => c
-    }
-
   def insert(v: A): Archive[A] =
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
@@ -59,6 +53,7 @@ sealed abstract class Archive[A] {
         }
     }
 
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY MGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   protected def removeDominatedAndInsert(v: A): Archive[A] =
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
@@ -67,6 +62,7 @@ sealed abstract class Archive[A] {
         NonEmpty[A](v :: l.filterNot(dominated.contains), b, c)
     }
 
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY MGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   def removeDominated(v: A, l: List[A]): List[A] =
     this match {
       case Empty(_, _) => List[A]()
