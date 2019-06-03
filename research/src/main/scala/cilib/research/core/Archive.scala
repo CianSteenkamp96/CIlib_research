@@ -81,14 +81,18 @@ sealed abstract class Archive[A] {
 
   ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY PMGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  def update_freqs_and_indices(freqs: NonEmptyList[Int]): (NonEmptyList[Int], (Int, Int, Int)) = {
-    val probs: NonEmptyList[Double] = probFromFitness(fitnessFromFreq(freqs))
-    val randomIndices: (Int, Int, Int) = get3Indices(probs)
-    val newFreqs = freqs.zipWithIndex.map(el =>
-      if ((el._2 == randomIndices._1) || (el._2 == randomIndices._2) || (el._2 == randomIndices._3))
-        el._1 + 1
-      else el._1)
-    (newFreqs, randomIndices)
+  def update_freqs_and_indices(freqs: NonEmptyList[Int]): (NonEmptyList[Int], (Int, Int, Int)) =
+    this match {
+      case EmptyPD(_, _, _, _) | NonEmptyPD(_, _, _, _, _) =>
+        val probs: NonEmptyList[Double] = probFromFitness(fitnessFromFreq(freqs))
+        val randomIndices: (Int, Int, Int) = get3Indices(probs)
+        val newFreqs = freqs.zipWithIndex.map(el =>
+          if ((el._2 == randomIndices._1) || (el._2 == randomIndices._2) || (el._2 == randomIndices._3))
+            el._1 + 1
+          else el._1)
+        (newFreqs, randomIndices)
+      case Empty(_, _) | NonEmpty(_, _, _) =>
+        throw new Exception("update_freqs_and_indices only used by PMGPSO (EmptyPD and NonEmptyPD archives) - Not relevant for MGPSO (Empty and NonEmpty archives).")
   }
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY MGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -102,7 +106,7 @@ sealed abstract class Archive[A] {
       case EmptyPD(_, _, _, _) |
           NonEmptyPD(_, _, _, _, _) => ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
         throw new Exception(
-          "removeDominatedAndInsert only used by MGPSO (Empty and NonEmpty archives) - Not supported for PMGPSO (EmptyPD and NonEmptyPD archives).")
+          "removeDominatedAndInsert only used by MGPSO (Empty and NonEmpty archives) - Not relevant for PMGPSO (EmptyPD and NonEmptyPD archives).")
     }
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY MGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -115,7 +119,7 @@ sealed abstract class Archive[A] {
         l.filterNot(dominated.contains)
       case EmptyPD(_, _, _, _) |
           NonEmptyPD(_, _, _, _, _) => ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
-        throw new Exception("removeDominatedAndInsert only used by MGPSO (Empty and NonEmpty archives) - Not supported for PMGPSO (EmptyPD and NonEmptyPD archives).")
+        throw new Exception("removeDominatedAndInsert only used by MGPSO (Empty and NonEmpty archives) - Not relevant for PMGPSO (EmptyPD and NonEmptyPD archives).")
     }
 
   def empty: Archive[A] =
