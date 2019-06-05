@@ -10,9 +10,9 @@ import cilib.research.mgpso.MGParticle._
 import cilib.research.mgpso._
 import cilib.research.{MGArchive, _}
 import cilib.{Iteration, _}
-import eu.timepit.refined.api.Refined
-import eu.timepit.refined.auto._
-import eu.timepit.refined.numeric.Positive
+import eu.timepit.refined.api.Refined /////////////////////////// NEW ///////////////////////////
+import eu.timepit.refined.refineV /////////////////////////// NEW ///////////////////////////
+import eu.timepit.refined.numeric.Positive /////////////////////////// NEW ///////////////////////////
 import scalaz.Scalaz._
 import scalaz._
 import scalaz.concurrent.Task
@@ -24,7 +24,6 @@ object Simulation {
 
   def runIO(algoName: String, /////////////////////////// New //////////////////////////////////
             numObjectives: Int, /////////////////////////// New //////////////////////////////////
-            normalMGPSO: Boolean, /////////////////////////// New //////////////////////////////////
             lambdaStrategy: LambdaStrategy,
             benchmark: Benchmark,
             iterations: Int,
@@ -36,11 +35,12 @@ object Simulation {
         val rng = RNG.init(10L + runCount.toLong)
         val swarm = createCollection(benchmark, lambdaStrategy.evalValue(rng))
 
-        // Archive size/limit = total population ////////////////////////// !!!!!!!! New CHANGES REQUIRED !!!!!!!! ///////////////////////////////
-        /////////////////////////////////////////////// CHANGES //////////////////////////////////////////////////
-//        val popSize: Int = benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _)
-
-        val archive = if (normalMGPSO) Archive.bounded[MGParticle](150, Dominates(benchmark), CrowdingDistance.mostCrowded) else Archive.boundedPD[MGParticle](150, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded, List.fill(numObjectives)(0).toNel.get, (0, 1, 2))
+        /////////////////////////////////////////////// NEW //////////////////////////////////////////////////
+        val popSize: Int Refined Positive = refineV[Positive](benchmark.controlParameters.swarmSizes.foldLeft(0)(_ + _)).right.get // archive limit set equal to total population size by default
+        /////////////////////////////////////////////// NEW //////////////////////////////////////////////////
+        val archive = if (algoName == "MGPSO") Archive.bounded[MGParticle](popSize, Dominates(benchmark), CrowdingDistance.mostCrowded)
+        else if(algoName == "PMGPSO") Archive.boundedPD[MGParticle](popSize, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded, List.fill(numObjectives)(0).toNel.get, (0, 1, 2))
+        else throw new Exception("The algorithm name should be \"MGPSO\" or \"PMGPSO\".")
 
         val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
           Runner.foldStepS(
