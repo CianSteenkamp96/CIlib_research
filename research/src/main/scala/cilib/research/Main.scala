@@ -32,15 +32,16 @@ object Main extends SafeApp {
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       val bounds = benchmark.bounds
       val lambdaStrategy =
-        LambdaStrategy.Standard(bounds)
+//              LambdaStrategy.Standard(bounds)
       //        LambdaStrategy.LinearIncreasing(bounds)
       //        LambdaStrategy.LinearDecreasing(bounds)
-      //        LambdaStrategy.Random(bounds)
+              LambdaStrategy.Random(bounds)
       //        LambdaStrategy.RandomI(bounds)
       //        LambdaStrategy.RandomIJ(bounds)
 
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      Simulation.runIO("PMGPSO", 15, normalMGPSO = false, lambdaStrategy, benchmark, 100, 3)
+      // Algo name => MGPSO or PMGPSO
+      Simulation.runIO("PMGPSO", 15, lambdaStrategy, benchmark, 100, 3)
     })
 
     for {
