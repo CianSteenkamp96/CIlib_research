@@ -80,8 +80,6 @@ object MGPSO {
 
   /////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////
   // Calc velocity with random control params w, c1, c2, c3 which satisfies mgpso convergence criteria
-  // w (0, 1)
-  // c_1,c_2,c_3 (0, 2)
   private def calcVelocity(particle: MGParticle,
                            social: Position,
                            cognitive: Position) = {
