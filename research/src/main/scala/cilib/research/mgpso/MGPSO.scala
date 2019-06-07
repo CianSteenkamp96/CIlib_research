@@ -86,12 +86,16 @@ object MGPSO {
                            social: Position,
                            cognitive: Position) = {
 
-    val wc123 = satisfyStabilityCriteria(particle.lambda.value.eval(RNG.fromTime).head) // Correct way to access lambda double value? Also, why RVar[NEL[Double]] and not just Rvar[Double] ????????
+    val wc123 = satisfyStabilityCriteria(particle.lambda.value.eval(RNG.fromTime).head).eval(RNG.fromTime) // Correct way to access lambda double value? Also, why is lambda an RVar[NEL[Double]] and not just Rvar[Double] or just Double????????
+    val wc123Final = if(wc123.isDefined) (wc123.get._1, wc123.get._2, wc123.get._3, wc123.get._4) else (0.356, 1.222, 1.3, 1.517) // if finding suitable params took too long then return 'default' ctrl param vals.
+                                                                                                                                  // These were calculated as the average value per ctrl param over all 9 WFG problems taken from the optimal WFG 3 objective parameters.
+                                                                                                                                  // A.k.a => 3 objective WFG 1-9 w vals / 9, 3 objective WFG 1-9 c1 vals / 9, etc...
+                                                                                                                                  // These values satisfy the convergence condition for MGPSO (lambda vals were chosen (0, 1) and still satisfied the stability criteria regardless of lambda).
 
-    val w = wc123._1
-    val c1 = wc123._2
-    val c2 = wc123._3
-    val c3 = wc123._4
+    val w = wc123Final._1
+    val c1 = wc123Final._2
+    val c2 = wc123Final._3
+    val c3 = wc123Final._4
 
     MGStep.withArchive[Double, Position](archive => {
       if (archive.isEmpty) {
@@ -123,51 +127,32 @@ object MGPSO {
   }
 
   /////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////
-  /////////////////////////////////////////////////// !!!!!!! VARS !!!!!!! ///////////////////////////////////////////////////
-  private def satisfyStabilityCriteria(lambda: Double) = {
-    var satisfied = false
-    var w = RVar.doubles(1).run(RNG.fromTime)._2.head // gen num between 0 and 1
-    var c1 = Dist.uniform(Interval(0.05, 1.95)).run(RNG.fromTime)._2 // gen num between 0 and 2
-    var c2 = Dist.uniform(Interval(0.05, 1.95)).run(RNG.fromTime)._2 // gen num between 0 and 2
-    var c3 = Dist.uniform(Interval(0.05, 1.95)).run(RNG.fromTime)._2 // gen num between 0 and 2
+  // Thanks Gary for the help
+  def satisfyStabilityCriteria(lambda: Double): RVar[Option[(Double, Double, Double, Double)]] = {
+    def generator(counter: Int): RVar[Option[(Int, (Double, Double, Double, Double))]] =
+      for {
+        w  <- RVar.next[Double] // gen num between 0 and 1
+        c1 <- Dist.uniform(Interval.open(0.0, 2.0)) // gen num between 0 and 2
+        c2 <- Dist.uniform(Interval.open(0.0, 2.0)) // gen num between 0 and 2
+        c3 <- Dist.uniform(Interval.open(0.0, 2.0)) // gen num between 0 and 2
+      } yield Some((counter, (w, c1, c2, c3)))
 
-    if(((c1 + (lambda * c2) + ((1 - lambda) * c3)) > 0) &&
-      ((c1 + (lambda * c2) + ((1 - lambda) * c3)) < ((4 * (1 - Math.pow(w, 2))) / (1 - w + ((Math.pow(c1, 2) + (Math.pow(lambda, 2) * Math.pow(c2, 2)) + ((Math.pow((1 - lambda), 2) * Math.pow(c3, 2)) * (1 + w))) / (3 * Math.pow((c1 + (lambda * c2) + ((1 - lambda) * c3)), 2)))))))
-      (w, c1, c2, c3)
-    else {
-      while (!satisfied) {
-        w = RVar.doubles(1).run(RNG.fromTime)._2.head // gen num between 0 and 1
-        c1 = Dist.uniform(Interval(0.05, 1.95)).run(RNG.fromTime)._2 // gen num between 0 and 2
-        c2 = Dist.uniform(Interval(0.05, 1.95)).run(RNG.fromTime)._2 // gen num between 0 and 2
-        c3 = Dist.uniform(Interval(0.05, 1.95)).run(RNG.fromTime)._2 // gen num between 0 and 2
-
-        if(((c1 + (lambda * c2) + ((1 - lambda) * c3)) > 0) &&
-          ((c1 + (lambda * c2) + ((1 - lambda) * c3)) < ((4 * (1 - Math.pow(w, 2))) / (1 - w + ((Math.pow(c1, 2) + (Math.pow(lambda, 2) * Math.pow(c2, 2)) + ((Math.pow((1 - lambda), 2) * Math.pow(c3, 2)) * (1 + w))) / (3 * Math.pow((c1 + (lambda * c2) + ((1 - lambda) * c3)), 2)))))))
-          satisfied = true
+    val result: RVar[Option[(Int, (Double,Double,Double,Double))]] =
+      generator(0).flatMap {
+        case Some((counter, (w, c1, c2, c3))) =>
+          // MGPSO convergence/stability criteria
+          if(((c1 + (lambda * c2) + ((1 - lambda) * c3)) > 0) &&
+            ((c1 + (lambda * c2) + ((1 - lambda) * c3)) < ((4 * (1 - Math.pow(w, 2))) / (1 - w + ((Math.pow(c1, 2) + (Math.pow(lambda, 2) * Math.pow(c2, 2)) + ((Math.pow((1 - lambda), 2) * Math.pow(c3, 2)) * (1 + w))) / (3 * Math.pow((c1 + (lambda * c2) + ((1 - lambda) * c3)), 2))))))) {
+            RVar.pure(Some((counter, (w, c1, c2, c3))))
+          } else {
+            if (counter > 10) RVar.pure(None) else generator(counter+1) // If generating random values that satisfy the stability criteria takes to long then return None
+          }
+        case None =>
+          sys.error("impossible")
       }
-      (w, c1, c2, c3)
-    }
+//    result.map(option => option.map(Tuple2 => Tuple2._2))
+    result.map(_.map(_._2))
   }
-  // Partial Gary solution - no vars
-//  def satisfyStabilityCriteria(lambda: Double) = {
-//    val generator =
-//      for {
-//        w  <- RVar.doubles(1) // gen num between 0 and 1
-//        c1 <- Dist.uniform(Interval(0.05, 1.95)) // gen num between 0 and 2
-//        c2 <- Dist.uniform(Interval(0.05, 1.95)) // gen num between 0 and 2
-//        c3 <- Dist.uniform(Interval(0.05, 1.95)) // gen num between 0 and 2
-//      } yield
-//
-//        generator.flatMap { case (w, c1, c2, c3) =>
-//          if(((c1 + (lambda * c2) + ((1 - lambda) * c3)) > 0) &&
-//            ((c1 + (lambda * c2) + ((1 - lambda) * c3)) < ((4 * (1 - Math.pow(w, 2))) / (1 - w + ((Math.pow(c1, 2) + (Math.pow(lambda, 2) * Math.pow(c2, 2)) + ((Math.pow((1 - lambda), 2) * Math.pow(c3, 2)) * (1 + w))) / (3 * Math.pow((c1 + (lambda * c2) + ((1 - lambda) * c3)), 2))))))) {
-//            RVar.pure((w, c1, c2, c3))
-//          } else {
-//            generator
-//          }
-//        }
-//
-//  }
 
   private def updateVelocity(particle: MGParticle, v: Position) = MGStep.stepPure[Double, MGParticle] {
     particle.updateVelocity(v)
