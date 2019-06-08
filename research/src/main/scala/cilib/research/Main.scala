@@ -36,7 +36,10 @@ object Main extends SafeApp {
       else if (benchmarkSuiteName == "DTLZ")
         BenchmarkSuite.dtlzObj(numObjectives, numDecisionVariables, swarms)
       else if (benchmarkSuiteName == "ZDT")
-        BenchmarkSuite.zdtObj(numObjectives = 2, swarms = swarms) // ZDT is only bi-objective and has its own specific number of decision variables
+        if (numObjectives != 2)
+          throw new Exception("ZDT is bi-objective.")
+        else
+          BenchmarkSuite.zdtObj(numObjectives = 2, swarms = swarms) // ZDT is only bi-objective and has its own specific number of decision variables
       else
         throw new Exception(
           "Test suite should be one of the following: \"WFG\", \"DTLZ\", or \"ZDT\"")
