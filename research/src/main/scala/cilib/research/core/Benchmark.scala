@@ -12,7 +12,6 @@ import spire.math._
 case class Benchmark(name: String,
                      f: NonEmptyList[Double] => NonEmptyList[Double],
                      bounds: NonEmptyList[Interval[Double]],
-//                     numDecisionVariables: Int, //////////////////////////// NEW ////////////////////////////
                      controlParameters: ControlParameters) {
 
   val opt = Min
