@@ -5,8 +5,6 @@ package cilib.research.benchmarks.dtlz
 
 import scalaz.Scalaz._
 import scalaz._
-import spire.implicits._
-import spire.math.Interval
 
 sealed abstract class DTLZ {
   def calcF(z: NonEmptyList[Double], g: Double, m: Int): IndexedSeq[Double] =
@@ -142,26 +140,25 @@ case object DTLZ6 extends DTLZ
 case object DTLZ7 extends DTLZ
 
 object DTLZ {
-  val bounds: NonEmptyList[Interval[Double]] = (0 until 30).toList.toNel.get.map(x => Interval(0.0, 1.0))
 
-  def DTLZ1F(m: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
-    DTLZ1.dtlz(nel, m, bounds.size)
+  def DTLZ1F(m: Int, numDimensions: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
+    DTLZ1.dtlz(nel, m, numDimensions)
 
-  def DTLZ2F(m: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
-    DTLZ2.dtlz(nel, m, bounds.size)
+  def DTLZ2F(m: Int, numDimensions: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
+    DTLZ2.dtlz(nel, m, numDimensions)
 
-  def DTLZ3F(m: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
-    DTLZ3.dtlz(nel, m, bounds.size)
+  def DTLZ3F(m: Int, numDimensions: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
+    DTLZ3.dtlz(nel, m, numDimensions)
 
-  def DTLZ4F(m: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
-    DTLZ4.dtlz(nel, m, bounds.size)
+  def DTLZ4F(m: Int, numDimensions: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
+    DTLZ4.dtlz(nel, m, numDimensions)
 
-  def DTLZ5F(m: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
-    DTLZ5.dtlz(nel, m, bounds.size)
+  def DTLZ5F(m: Int, numDimensions: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
+    DTLZ5.dtlz(nel, m, numDimensions)
 
-  def DTLZ6F(m: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
-    DTLZ6.dtlz(nel, m, bounds.size)
+  def DTLZ6F(m: Int, numDimensions: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
+    DTLZ6.dtlz(nel, m, numDimensions)
 
-  def DTLZ7F(m: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
-    DTLZ7.dtlz(nel, m, bounds.size)
+  def DTLZ7F(m: Int, numDimensions: Int)(nel: NonEmptyList[Double]): NonEmptyList[Double] =
+    DTLZ7.dtlz(nel, m, numDimensions)
 }

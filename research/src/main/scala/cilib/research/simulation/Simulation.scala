@@ -24,12 +24,13 @@ object Simulation {
 
   def runIO(algoName: String, /////////////////////////// New //////////////////////////////////
             numObjectives: Int, /////////////////////////// New //////////////////////////////////
+            numDecisionVariables: Int, /////////////////////////// New //////////////////////////////////
             lambdaStrategy: LambdaStrategy,
             benchmark: Benchmark,
             iterations: Int,
             independentRuns: Int): IO[Unit] =
     for {
-      _ <- IO(clearFile(algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + numObjectives + "obj"))
+      _ <- IO(clearFile(algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + numObjectives + "obj." + numDecisionVariables + "D"))
       _ <- (1 to independentRuns).toList.traverse(runCount => {
 
         val rng = RNG.init(10L + runCount.toLong)
@@ -59,11 +60,11 @@ object Simulation {
 
         val stream = merge
           .mergeN(20)(measured)
-          .to(csvSinkAppend[String](new File(algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + numObjectives + "obj")))
+          .to(csvSinkAppend[String](new File(algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + numObjectives + "obj." + numDecisionVariables + "D")))
           .run
 
         for {
-          _ <- putStr(List(algoName, lambdaStrategy.name, benchmark.name, numObjectives + "obj", runCount).mkString(" - "))
+          _ <- putStr(List(algoName, lambdaStrategy.name, benchmark.name, numObjectives + "obj", numDecisionVariables + "D", "run: " + runCount).mkString(" - "))
           timeTaken <- IO {
             val start = System.nanoTime()
             stream.unsafePerformSync
