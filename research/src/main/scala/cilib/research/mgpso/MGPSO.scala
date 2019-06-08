@@ -191,11 +191,10 @@ object MGPSO {
               ((c1 + (lambda * c2) + ((1 - lambda) * c3)) < ((4 * (1 - Math.pow(w, 2))) / (1 - w + ((Math
                 .pow(c1, 2) + (Math.pow(lambda, 2) * Math.pow(c2, 2)) + ((Math.pow((1 - lambda), 2) * Math
                 .pow(c3, 2)) * (1 + w))) / (3 * Math.pow((c1 + (lambda * c2) + ((1 - lambda) * c3)),
-                                                         2))))))) {
+                                                         2)))))))
             RVar.pure(Some((counter, (w, c1, c2, c3))))
-          } else {
-            if (counter > 10) RVar.pure(None) else generator(counter + 1) // If generating random values that satisfy the stability criteria takes to long then return None
-          }
+          else
+			  if (counter > 10) RVar.pure(None) else generator(counter + 1) // If generating random values that satisfy the stability criteria takes to long then return None
         case None =>
           sys.error("impossible")
       }
