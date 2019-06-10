@@ -1,3 +1,4 @@
+////////////////////////////////////////////// NEW - Bounds moved //////////////////////////////////////////////
 package cilib.research.benchmarks.zdt
 
 import java.lang.Math._
@@ -5,8 +6,6 @@ import java.lang.Math._
 import cilib._
 import scalaz.Scalaz._
 import scalaz._
-import spire.implicits._
-import spire.math.Interval
 
 sealed abstract class ZDT {
   def assert(list: NonEmptyList[Double], f: NonEmptyList[Double] => Double): Option[Double] = {
@@ -20,14 +19,6 @@ sealed abstract class ZDT {
     if (check) Some(f(list))
     else None
   }
-
-  def bounds: NonEmptyList[Interval[Double]] =
-    this match {
-      case ZDT1 | ZDT2 | ZDT3 => Interval(0.0, 1.0) ^ 30
-      case ZDT4               => Interval(0.0, 1.0) <:: (Interval(-5.0, 5.0) ^ 9)
-      case ZDT6               => Interval(0.0, 1.0) ^ 10
-
-    }
 
   def g(list: NonEmptyList[Double]): Option[Double] =
     assert(

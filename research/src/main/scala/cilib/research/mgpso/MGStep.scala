@@ -11,6 +11,7 @@ object MGStep {
   def stepPure[A, B](b: B) =
     apply[A, B](Step.pure[A, B](b))
 
+  // See Gitter chat with Kyle Erwin explaining this code
   def withArchive[A, B](f: MGArchive => Step[A, B]) =
     lift[A, B](archive => f(archive).map(x => (archive, x)))
 
@@ -21,6 +22,7 @@ object MGStep {
           .pure[Double, Unit](())
           .map(x => (f(archive), x)))
 
+  // See Gitter chat with Kyle Erwin explaining this code
   private def lift[A, B](f: MGArchive => Step[A, (MGArchive, B)]) =
     StepS.apply[A, MGArchive, B](
       StateT[Step[A, ?], MGArchive, B](f)

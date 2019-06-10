@@ -1,557 +1,97 @@
 package cilib.research.core
 import cilib.research.benchmarks.wfg._
 import cilib.research.benchmarks.dtlz._
-
+import cilib.research.benchmarks.zdt._
 import scalaz.NonEmptyList
+import spire.math.Interval
+import spire.implicits._
+import cilib._ ////////////////////////////////////////////// NEW //////////////////////////////////////////////
+
+import scalaz._
+import Scalaz._
 
 case class BenchmarkSuite(name: String, benchmarks: NonEmptyList[Benchmark])
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE CONFIGS HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+////////////////////////////////////////////// NEW //////////////////////////////////////////////
 object BenchmarkSuite {
 
-  val wfg3obj = BenchmarkSuite(
-    "wfg3obj",
-    NonEmptyList(
-      Benchmark("WFG1",
-        WFG.WFG1(3),
-        WFG.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(50, 50, 50))),
-      Benchmark("WFG2",
-        WFG.WFG2(3),
-        WFG.bounds,
-        ControlParameters(0.275, 1.25, 1.40, 1.70, NonEmptyList(50, 50, 50))),
-      Benchmark("WFG3",
-        WFG.WFG3(3),
-        WFG.bounds,
-        ControlParameters(0.525, 1.65, 1.75, 0.75, NonEmptyList(50, 50, 50))),
-      Benchmark("WFG4",
-        WFG.WFG4(3),
-        WFG.bounds,
-        ControlParameters(0.275, 1.75, 0.50, 1.05, NonEmptyList(50, 50, 50))),
-      Benchmark("WFG5",
-        WFG.WFG5(3),
-        WFG.bounds,
-        ControlParameters(0.575, 0.60, 1.85, 1.75, NonEmptyList(50, 50, 50))),
-      Benchmark("WFG6",
-        WFG.WFG6(3),
-        WFG.bounds,
-        ControlParameters(0.300, 0.90, 0.90, 1.90, NonEmptyList(50, 50, 50))),
-      Benchmark("WFG7",
-        WFG.WFG7(3),
-        WFG.bounds,
-        ControlParameters(0.425, 1.45, 1.50, 1.40, NonEmptyList(50, 50, 50))),
-      Benchmark("WFG8",
-        WFG.WFG8(3),
-        WFG.bounds,
-        ControlParameters(0.425, 0.95, 1.75, 1.85, NonEmptyList(50, 50, 50))),
-      Benchmark("WFG9",
-        WFG.WFG9(3),
-        WFG.bounds,
-        ControlParameters(0.275, 1.25, 0.75, 1.50, NonEmptyList(50, 50, 50)))
+  def wfgObj(numObjectives: Int,
+             numDecisionVariables: Int,
+             swarms: NonEmptyList[Int]): BenchmarkSuite = {
+    val wfgBounds =
+      (0 until numDecisionVariables).toList.toNel.get.map(x => Interval(0.0, 2.0 * x + 1.0))
+    BenchmarkSuite(
+      "wfg" + numObjectives + "obj",
+      NonEmptyList(
+        Benchmark("WFG1", WFG.WFG1(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG2", WFG.WFG2(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG3", WFG.WFG3(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG4", WFG.WFG4(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG5", WFG.WFG5(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG6", WFG.WFG6(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG7", WFG.WFG7(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG8", WFG.WFG8(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG9", WFG.WFG9(numObjectives), wfgBounds, ControlParameters(swarms))
+      )
     )
-  )
+  }
 
-  val wfg5obj = BenchmarkSuite(
-    "wfg5obj",
-    NonEmptyList(
-      Benchmark("WFG1",
-        WFG.WFG1(5),
-        WFG.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(30, 30, 30, 30, 30))),
-      Benchmark("WFG2",
-        WFG.WFG2(5),
-        WFG.bounds,
-        ControlParameters(0.275, 1.25, 1.40, 1.70, NonEmptyList(30, 30, 30, 30, 30))),
-      Benchmark("WFG3",
-        WFG.WFG3(5),
-        WFG.bounds,
-        ControlParameters(0.525, 1.65, 1.75, 0.75, NonEmptyList(30, 30, 30, 30, 30))),
-      Benchmark("WFG4",
-        WFG.WFG4(5),
-        WFG.bounds,
-        ControlParameters(0.275, 1.75, 0.50, 1.05, NonEmptyList(30, 30, 30, 30, 30))),
-      Benchmark("WFG5",
-        WFG.WFG5(5),
-        WFG.bounds,
-        ControlParameters(0.575, 0.60, 1.85, 1.75, NonEmptyList(30, 30, 30, 30, 30))),
-      Benchmark("WFG6",
-        WFG.WFG6(5),
-        WFG.bounds,
-        ControlParameters(0.300, 0.90, 0.90, 1.90, NonEmptyList(30, 30, 30, 30, 30))),
-      Benchmark("WFG7",
-        WFG.WFG7(5),
-        WFG.bounds,
-        ControlParameters(0.425, 1.45, 1.50, 1.40, NonEmptyList(30, 30, 30, 30, 30))),
-      Benchmark("WFG8",
-        WFG.WFG8(5),
-        WFG.bounds,
-        ControlParameters(0.425, 0.95, 1.75, 1.85, NonEmptyList(30, 30, 30, 30, 30))),
-      Benchmark("WFG9",
-        WFG.WFG9(5),
-        WFG.bounds,
-        ControlParameters(0.275, 1.25, 0.75, 1.50, NonEmptyList(30, 30, 30, 30, 30)))
+  def dtlzObj(numObjectives: Int,
+              numDecisionVariables: Int,
+              swarms: NonEmptyList[Int]): BenchmarkSuite = {
+    val dtlzBounds =
+      (0 until numDecisionVariables).toList.toNel.get.map(x => Interval(0.0, 1.0))
+    BenchmarkSuite(
+      "dtlz" + numObjectives + "obj",
+      NonEmptyList(
+        Benchmark("DTLZ1",
+                  DTLZ.DTLZ1F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ2",
+                  DTLZ.DTLZ2F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ3",
+                  DTLZ.DTLZ3F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ4",
+                  DTLZ.DTLZ4F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ5",
+                  DTLZ.DTLZ5F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ6",
+                  DTLZ.DTLZ6F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ7",
+                  DTLZ.DTLZ7F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+      )
     )
-  )
+  }
 
-  val wfg8obj = BenchmarkSuite(
-    "wfg8obj",
-    NonEmptyList(
-      Benchmark(
-        "WFG1",
-        WFG.WFG1(8),
-        WFG.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "WFG2",
-        WFG.WFG2(8),
-        WFG.bounds,
-        ControlParameters(0.275, 1.25, 1.40, 1.70, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "WFG3",
-        WFG.WFG3(8),
-        WFG.bounds,
-        ControlParameters(0.525, 1.65, 1.75, 0.75, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "WFG4",
-        WFG.WFG4(8),
-        WFG.bounds,
-        ControlParameters(0.275, 1.75, 0.50, 1.05, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "WFG5",
-        WFG.WFG5(8),
-        WFG.bounds,
-        ControlParameters(0.575, 0.60, 1.85, 1.75, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "WFG6",
-        WFG.WFG6(8),
-        WFG.bounds,
-        ControlParameters(0.300, 0.90, 0.90, 1.90, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "WFG7",
-        WFG.WFG7(8),
-        WFG.bounds,
-        ControlParameters(0.425, 1.45, 1.50, 1.40, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "WFG8",
-        WFG.WFG8(8),
-        WFG.bounds,
-        ControlParameters(0.425, 0.95, 1.75, 1.85, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "WFG9",
-        WFG.WFG9(8),
-        WFG.bounds,
-        ControlParameters(0.275, 1.25, 0.75, 1.50, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17)))
+  def zdtObj(swarms: NonEmptyList[Int]): BenchmarkSuite = {
+    val zdt1Bounds = Interval(0.0, 1.0) ^ 30
+    val zdt2Bounds = Interval(0.0, 1.0) ^ 30
+    val zdt3Bounds = Interval(0.0, 1.0) ^ 30
+    val zdt4Bounds = Interval(0.0, 1.0) <:: (Interval(-5.0, 5.0) ^ 9)
+    val zdt6Bounds = Interval(0.0, 1.0) ^ 10
+
+    BenchmarkSuite(
+      "ZDT",
+      NonEmptyList(
+        Benchmark("ZDT1", ZDT.ZDT1F, zdt1Bounds, ControlParameters(swarms)),
+        Benchmark("ZDT2", ZDT.ZDT2F, zdt2Bounds, ControlParameters(swarms)),
+        Benchmark("ZDT3", ZDT.ZDT3F, zdt3Bounds, ControlParameters(swarms)),
+        Benchmark("ZDT4", ZDT.ZDT4F, zdt4Bounds, ControlParameters(swarms)),
+        Benchmark("ZDT6", ZDT.ZDT6F, zdt6Bounds, ControlParameters(swarms))
+      )
     )
-  )
-
-  val wfg10obj = BenchmarkSuite(
-    "wfg10obj",
-    NonEmptyList(
-      Benchmark("WFG1",
-        WFG.WFG1(10),
-        WFG.bounds,
-        ControlParameters(0.125,
-          1.20,
-          1.30,
-          1.75,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("WFG2",
-        WFG.WFG2(10),
-        WFG.bounds,
-        ControlParameters(0.275,
-          1.25,
-          1.40,
-          1.70,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("WFG3",
-        WFG.WFG3(10),
-        WFG.bounds,
-        ControlParameters(0.525,
-          1.65,
-          1.75,
-          0.75,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("WFG4",
-        WFG.WFG4(10),
-        WFG.bounds,
-        ControlParameters(0.275,
-          1.75,
-          0.50,
-          1.05,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("WFG5",
-        WFG.WFG5(10),
-        WFG.bounds,
-        ControlParameters(0.575,
-          0.60,
-          1.85,
-          1.75,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("WFG6",
-        WFG.WFG6(10),
-        WFG.bounds,
-        ControlParameters(0.300,
-          0.90,
-          0.90,
-          1.90,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("WFG7",
-        WFG.WFG7(10),
-        WFG.bounds,
-        ControlParameters(0.425,
-          1.45,
-          1.50,
-          1.40,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("WFG8",
-        WFG.WFG8(10),
-        WFG.bounds,
-        ControlParameters(0.425,
-          0.95,
-          1.75,
-          1.85,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("WFG9",
-        WFG.WFG9(10),
-        WFG.bounds,
-        ControlParameters(0.275,
-          1.25,
-          0.75,
-          1.50,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15)))
-    )
-  )
-
-  val wfg15obj = BenchmarkSuite(
-    "wfg15obj",
-    NonEmptyList(
-      Benchmark("WFG1",
-        WFG.WFG1(15),
-        WFG.bounds,
-        ControlParameters(0.125,
-          1.20,
-          1.30,
-          1.75,
-          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-            10, 10))),
-      Benchmark("WFG2",
-        WFG.WFG2(15),
-        WFG.bounds,
-        ControlParameters(0.275,
-          1.25,
-          1.40,
-          1.70,
-          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-            10, 10))),
-      Benchmark("WFG3",
-        WFG.WFG3(15),
-        WFG.bounds,
-        ControlParameters(0.525,
-          1.65,
-          1.75,
-          0.75,
-          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-            10, 10))),
-      Benchmark("WFG4",
-        WFG.WFG4(15),
-        WFG.bounds,
-        ControlParameters(0.275,
-          1.75,
-          0.50,
-          1.05,
-          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-            10, 10))),
-      Benchmark("WFG5",
-        WFG.WFG5(15),
-        WFG.bounds,
-        ControlParameters(0.575,
-          0.60,
-          1.85,
-          1.75,
-          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-            10, 10))),
-      Benchmark("WFG6",
-        WFG.WFG6(15),
-        WFG.bounds,
-        ControlParameters(0.300,
-          0.90,
-          0.90,
-          1.90,
-          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-            10, 10))),
-      Benchmark("WFG7",
-        WFG.WFG7(15),
-        WFG.bounds,
-        ControlParameters(0.425,
-          1.45,
-          1.50,
-          1.40,
-          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-            10, 10))),
-      Benchmark("WFG8",
-        WFG.WFG8(15),
-        WFG.bounds,
-        ControlParameters(0.425,
-          0.95,
-          1.75,
-          1.85,
-          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-            10, 10))),
-      Benchmark(
-        "WFG9",
-        WFG.WFG9(15),
-        WFG.bounds,
-        ControlParameters(0.275,
-          1.25,
-          0.75,
-          1.50,
-          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10)))
-    )
-  )
-
-  val dtlz3obj = BenchmarkSuite(
-    "dtlz3obj",
-    NonEmptyList(
-      Benchmark("DTLZ1",
-        DTLZ.DTLZ1F(3),
-        DTLZ.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(50, 50, 50))),
-      Benchmark("DTLZ2",
-        DTLZ.DTLZ2F(3),
-        DTLZ.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(50, 50, 50))),
-      Benchmark("DTLZ3",
-        DTLZ.DTLZ3F(3),
-        DTLZ.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(50, 50, 50))),
-      Benchmark("DTLZ4",
-        DTLZ.DTLZ4F(3),
-        DTLZ.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(50, 50, 50))),
-      Benchmark("DTLZ5",
-        DTLZ.DTLZ5F(3),
-        DTLZ.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(50, 50, 50))),
-      Benchmark("DTLZ6",
-        DTLZ.DTLZ6F(3),
-        DTLZ.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(50, 50, 50))),
-      Benchmark("DTLZ7",
-        DTLZ.DTLZ7F(3),
-        DTLZ.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(50, 50, 50)))
-    )
-  )
-
-  // Important NOTE: Only specify the final param, Some((NonEmptyList[Int](0, 0, 0, 0, 0), (0, 0, 0))), when using partial-dominance. If it gets mixed up for example dominance with final param then normal dom wont work right.. no cleanup after insert as per insert func implemnetation (will exec partial-dom section),
-  // if partial-dom relation used and it is not specified then error would occur since insert cond will try and work with indices and frequencies not defined
-  val dtlz5obj = BenchmarkSuite(
-    "dtlz5obj",
-    NonEmptyList(
-      //      Benchmark("DTLZ1",
-      //                DTLZ.DTLZ1F(5),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(30, 30, 30, 30, 30))),
-      //      Benchmark("DTLZ2",
-      //                DTLZ.DTLZ2F(5),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.275, 1.25, 1.40, 1.70, NonEmptyList(30, 30, 30, 30, 30))),
-      //      Benchmark("DTLZ3",
-      //                DTLZ.DTLZ3F(5),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.525, 1.65, 1.75, 0.75, NonEmptyList(30, 30, 30, 30, 30))),
-      //      Benchmark("DTLZ4",
-      //                DTLZ.DTLZ4F(5),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.275, 1.75, 0.50, 1.05, NonEmptyList(30, 30, 30, 30, 30))),
-      //      Benchmark("DTLZ5",
-      //                DTLZ.DTLZ5F(5),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.575, 0.60, 1.85, 1.75, NonEmptyList(30, 30, 30, 30, 30)))
-      Benchmark("DTLZ6",
-        DTLZ.DTLZ6F(5),
-        DTLZ.bounds,
-        ControlParameters(0.300, 0.90, 0.90, 1.90, NonEmptyList(30, 30, 30, 30, 30)))
-      //      ,
-      //      Benchmark("DTLZ7",
-      //                DTLZ.DTLZ7F(5),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.425, 1.45, 1.50, 1.40, NonEmptyList(30, 30, 30, 30, 30), Some((NonEmptyList[Int](0, 0, 0, 0, 0), (0, 0, 0)))))
-    )
-  )
-
-  val dtlz8obj = BenchmarkSuite(
-    "dtlz8obj",
-    NonEmptyList(
-      Benchmark(
-        "DTLZ1",
-        DTLZ.DTLZ1F(8),
-        DTLZ.bounds,
-        ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "DTLZ2",
-        DTLZ.DTLZ2F(8),
-        DTLZ.bounds,
-        ControlParameters(0.275, 1.25, 1.40, 1.70, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "DTLZ3",
-        DTLZ.DTLZ3F(8),
-        DTLZ.bounds,
-        ControlParameters(0.525, 1.65, 1.75, 0.75, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "DTLZ4",
-        DTLZ.DTLZ4F(8),
-        DTLZ.bounds,
-        ControlParameters(0.275, 1.75, 0.50, 1.05, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "DTLZ5",
-        DTLZ.DTLZ5F(8),
-        DTLZ.bounds,
-        ControlParameters(0.575, 0.60, 1.85, 1.75, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "DTLZ6",
-        DTLZ.DTLZ6F(8),
-        DTLZ.bounds,
-        ControlParameters(0.300, 0.90, 0.90, 1.90, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17))),
-      Benchmark(
-        "DTLZ7",
-        DTLZ.DTLZ7F(8),
-        DTLZ.bounds,
-        ControlParameters(0.425, 1.45, 1.50, 1.40, NonEmptyList(19, 19, 19, 19, 19, 19, 19, 17)))
-    )
-  )
-
-  val dtlz10obj = BenchmarkSuite(
-    "dtlz10obj",
-    NonEmptyList(
-      Benchmark("DTLZ1",
-        DTLZ.DTLZ1F(10),
-        DTLZ.bounds,
-        ControlParameters(0.125,
-          1.20,
-          1.30,
-          1.75,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("DTLZ2",
-        DTLZ.DTLZ2F(10),
-        DTLZ.bounds,
-        ControlParameters(0.275,
-          1.25,
-          1.40,
-          1.70,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("DTLZ3",
-        DTLZ.DTLZ3F(10),
-        DTLZ.bounds,
-        ControlParameters(0.525,
-          1.65,
-          1.75,
-          0.75,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("DTLZ4",
-        DTLZ.DTLZ4F(10),
-        DTLZ.bounds,
-        ControlParameters(0.275,
-          1.75,
-          0.50,
-          1.05,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("DTLZ5",
-        DTLZ.DTLZ5F(10),
-        DTLZ.bounds,
-        ControlParameters(0.575,
-          0.60,
-          1.85,
-          1.75,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("DTLZ6",
-        DTLZ.DTLZ6F(10),
-        DTLZ.bounds,
-        ControlParameters(0.300,
-          0.90,
-          0.90,
-          1.90,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15))),
-      Benchmark("DTLZ7",
-        DTLZ.DTLZ7F(10),
-        DTLZ.bounds,
-        ControlParameters(0.425,
-          1.45,
-          1.50,
-          1.40,
-          NonEmptyList(15, 15, 15, 15, 15, 15, 15, 15, 15, 15)))
-    )
-  )
-
-  val dtlz15obj = BenchmarkSuite(
-    "dtlz15obj",
-    NonEmptyList(
-      //      Benchmark("DTLZ1",
-      //                DTLZ.DTLZ1F(15),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.125,
-      //                                  1.20,
-      //                                  1.30,
-      //                                  1.75,
-      //                                  NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-      //                                    10, 10))),
-      //      Benchmark("DTLZ2",
-      //                DTLZ.DTLZ2F(15),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.275,
-      //                                  1.25,
-      //                                  1.40,
-      //                                  1.70,
-      //                                  NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-      //                                    10, 10))),
-      //      Benchmark("DTLZ3",
-      //                DTLZ.DTLZ3F(15),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.525,
-      //                                  1.65,
-      //                                  1.75,
-      //                                  0.75,
-      //                                  NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-      //                                    10, 10))),
-      //      Benchmark("DTLZ4",
-      //                DTLZ.DTLZ4F(15),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.275,
-      //                                  1.75,
-      //                                  0.50,
-      //                                  1.05,
-      //                                  NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-      //                                    10, 10))),
-      //      Benchmark("DTLZ5",
-      //                DTLZ.DTLZ5F(15),
-      //                DTLZ.bounds,
-      //                ControlParameters(0.575,
-      //                                  0.60,
-      //                                  1.85,
-      //                                  1.75,
-      //                                  NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-      //                                    10, 10))),
-      Benchmark("DTLZ6",
-        DTLZ.DTLZ6F(15),
-        DTLZ.bounds,
-        ControlParameters(0.300,
-          0.90,
-          0.90,
-          1.90,
-          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-            //                                    10, 10), Some((NonEmptyList[Int](15, 0, 3, 0, 1, 2, 8, 7, 0, 2, 1, 1, 7, 7, 23), (0, 0, 0)))))
-            10, 10)))
-      //      ,
-      //      Benchmark(
-      //        "DTLZ7",
-      //        DTLZ.DTLZ7F(15),
-      //        DTLZ.bounds,
-      //        ControlParameters(0.425,
-      //                          1.45,
-      //                          1.50,
-      //                          1.40,
-      //                          NonEmptyList(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10)))
-    )
-  )
-
+  }
 }
