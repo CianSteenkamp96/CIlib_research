@@ -166,8 +166,8 @@ lazy val cilib = project
       releaseStepCommand("sonatypeReleaseAll")
     )
   ))
-  .aggregate(core, de, docs, eda, example, exec, ga, moo, pso, tests)
-  .dependsOn(core, de, docs, eda, example, exec, ga, moo, pso, tests)
+  .aggregate(core, de, docs, eda, example, exec, ga, moo, pso, tests, research) // Here !!! 'Research' was added to the end of the list!!!
+  .dependsOn(core, de, docs, eda, example, exec, ga, moo, pso, tests, research) // Here !!! 'Research' was added to the end of the list!!!
 
 lazy val core = project
   .settings(
