@@ -371,3 +371,7 @@ lazy val io = project
         "org.scalaz.stream" %% "scalaz-stream" % scalazStreamVersion
       )
     ))
+
+enablePlugins(PackPlugin)
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+packMain := Map("SubswarmsGen" -> "cilib.research.SubswarmsGen")
