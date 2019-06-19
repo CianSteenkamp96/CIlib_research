@@ -1,5 +1,7 @@
 // Cian Steenkamp
 
+// Note: Still some exceptions that might have to be removed - functional programming ! ! ! ! ! !
+
 package cilib.research.core
 import scalaz._
 import Scalaz._

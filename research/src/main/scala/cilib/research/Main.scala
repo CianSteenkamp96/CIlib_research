@@ -13,10 +13,10 @@ object Main extends SafeApp {
 
   override def run(args: ImmutableArray[String]): IO[Unit] = {
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // This will be passed in through the CLI
+    // This will be passed in through the CLI as CL params
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     val algoName
-      : String = "PMGPSO" // 'MGPSO' or 'PMGPSO' - still to possibly implement KnMGPSO_A, KnMGPSO_B, KnPMGPSO_A, KnPMGPSO_B -
+      : String = "PMGPSO" // 'MGPSO' or 'PMGPSO' - still to possibly implement KnMGPSO, KnPMGPSO
     // see note in office cupboard explaining different Knea Point MGPSO options/configs/combos of insert policies and archive guide selection
     val lambdaStrategy: String = "R" // 'R', 'STD', 'LI', 'LD', 'RI', or 'RIJ'
     val iterations: Int = 100 // #iterations per independent sample/run
