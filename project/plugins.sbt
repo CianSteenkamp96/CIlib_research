@@ -20,3 +20,5 @@ addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.0")
 
 //addSbtPlugin("com.lucidchart" % "sbt-scalafmt-coursier" % "1.15")
 addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "1.5.1")
+
+addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.12")
