@@ -4,35 +4,71 @@ package research
 import cilib.research.core.BenchmarkSuite
 import cilib.research.mgpso.LambdaStrategy
 import cilib.research.simulation.Simulation
+import scalaz.Scalaz._
 import scalaz._
 import scalaz.effect.IO._
-import scalaz.effect.SafeApp
+import scalaz.effect.{IO, SafeApp}
 
 object Main extends SafeApp {
 
-  // args -> lambda strategy, benchmark suite
-  override def run(args: ImmutableArray[String]) = {
+  override def run(args: ImmutableArray[String]): IO[Unit] = {
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // This will be passed in through the CLI as CL params
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    val algoName
+      : String = "PMGPSO" // 'MGPSO' or 'PMGPSO' - still to possibly implement KnMGPSO, KnPMGPSO
+    // see note in office cupboard explaining different Knea Point MGPSO options/configs/combos of insert policies and archive guide selection
+    val lambdaStrategy: String = "R" // 'R', 'STD', 'LI', 'LD', 'RI', or 'RIJ'
+    val iterations: Int = 100 // #iterations per independent sample/run
+    val independentRuns: Int = 3 // #independent samples
+    val numDecisionVariables: Int = 30 // #dimensions in the decision space
+    val swarms
+      : NonEmptyList[Int] = List.fill(15)(10).toNel.get // NonEmptyList of sub swarm divisions;
+    // number of objectives equal to the size of the swarms NonEmptyList,
+    // that is, each element in the NEL represents a sub swarm's size
+    val benchmarkSuiteName: String = "WFG" // 'WFG','DTLZ', or 'ZDT'
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    val numObjectives: Int = swarms.size // #dimensions in the objective/solution space
 
-    val benchmarkSuite = args(1) match {
-      case "ZDT" => BenchmarkSuite.ZDT
-      case "WFG.2D" => BenchmarkSuite.WFG_2D
-      case "WFG.3D" => BenchmarkSuite.WFG_3D
-      case "WFG6.2D" => BenchmarkSuite.OnlyWFG6_2D
-    }
+    val benchmarkSuite =
+      if (benchmarkSuiteName == "WFG")
+        BenchmarkSuite.wfgObj(numObjectives, numDecisionVariables, swarms)
+      else if (benchmarkSuiteName == "DTLZ")
+        BenchmarkSuite.dtlzObj(numObjectives, numDecisionVariables, swarms)
+      else if (benchmarkSuiteName == "ZDT")
+        if (numObjectives != 2)
+          throw new Exception("ZDT is bi-objective.")
+        else
+          BenchmarkSuite.zdtObj(swarms = swarms) // ZDT is only bi-objective and has its own specific number of decision variables
+      else
+        throw new Exception(
+          "Test suite should be one of the following: \"WFG\", \"DTLZ\", or \"ZDT\"")
 
-    val simulationsIO = benchmarkSuite.benchmarks.traverse1(benchmark => {
-      val bounds = benchmark.bounds
-
-      val lambdaStrategy = args(0) match {
-        case "STD" => LambdaStrategy.Standard(bounds)
-        case "LI" => LambdaStrategy.LinearIncreasing(bounds)
-        case "LD" => LambdaStrategy.LinearDecreasing(bounds)
-        case "R" => LambdaStrategy.Random(bounds)
-        case "RI" => LambdaStrategy.RandomI(bounds)
-        case "RIJ" => LambdaStrategy.RandomIJ(bounds)
-      }
-
-      Simulation.runIO(lambdaStrategy, benchmark, 2000, 30)
+    val simulationsIO = benchmarkSuite.benchmarks.traverse1(b => {
+      val bounds = b.bounds
+      val ls =
+        if (lambdaStrategy == "STD")
+          LambdaStrategy.Standard(bounds)
+        else if (lambdaStrategy == "LI")
+          LambdaStrategy.LinearIncreasing(bounds)
+        else if (lambdaStrategy == "LD")
+          LambdaStrategy.LinearDecreasing(bounds)
+        else if (lambdaStrategy == "R")
+          LambdaStrategy.Random(bounds)
+        else if (lambdaStrategy == "RI")
+          LambdaStrategy.RandomI(bounds)
+        else if (lambdaStrategy == "RIJ")
+          LambdaStrategy.RandomIJ(bounds)
+        else
+          throw new Exception(
+            "Lambda strategy can only be one of the following: \"STD\", \"LI\", \"LD\", \"R\", \"RI\", or \"RIJ\"")
+      Simulation.runIO(algoName,
+                       numObjectives,
+                       numDecisionVariables,
+                       ls,
+                       b,
+                       iterations,
+                       independentRuns)
     })
 
     for {
@@ -40,7 +76,5 @@ object Main extends SafeApp {
       _ <- simulationsIO
       _ <- putStrLn("Done")
     } yield ()
-
   }
-
 }

@@ -6,13 +6,15 @@ import scalaz.Scalaz._
 
 object ResultsToJson {
 
-  def finalArchive(run: Int, iteration: Int, archive: MGArchive): String = {
-    if (iteration === 2000) {
+  def finalArchive(run: Int, iteration: Int, archive: MGArchive, maxIterations: Int): String = {
+//    if (iteration === maxIterations) {
+    if (iteration % (maxIterations / 20) == 0) { // save more (or less) data to file
       "{ \"archive\": [" +
         archive.values
           .map(x => "[" + x.pos.fitness.toList.mkString(",") + "]")
           .mkString(",") +
-        "], \"run\": " + run + " }\n"
+        "], \"iteration\": " + iteration + ", " +
+        ", \"run\": " + run + " }\n"
     } else ""
   }
 

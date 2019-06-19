@@ -1,130 +1,97 @@
 package cilib.research.core
-import cilib.research.benchmarks.wfg.WFG._
-import cilib.research.benchmarks.zdt.ZDT._
+import cilib.research.benchmarks.wfg._
+import cilib.research.benchmarks.dtlz._
 import cilib.research.benchmarks.zdt._
 import scalaz.NonEmptyList
+import spire.math.Interval
+import spire.implicits._
+import cilib._ ////////////////////////////////////////////// NEW //////////////////////////////////////////////
+
+import scalaz._
+import Scalaz._
 
 case class BenchmarkSuite(name: String, benchmarks: NonEmptyList[Benchmark])
 
+////////////////////////////////////////////// NEW //////////////////////////////////////////////
 object BenchmarkSuite {
 
-  val ZDT = BenchmarkSuite(
-    "ZDT",
-    NonEmptyList(
-      Benchmark("ZDT1",
-                ZDT1F,
-                ZDT1.bounds,
-                ControlParameters(0.475, 1.80, 1.10, 1.80, NonEmptyList(33, 17))),
-      Benchmark("ZDT2",
-                ZDT2F,
-                ZDT2.bounds,
-                ControlParameters(0.075, 1.60, 1.35, 1.90, NonEmptyList(8, 42))),
-      Benchmark("ZDT3",
-                ZDT3F,
-                ZDT3.bounds,
-                ControlParameters(0.050, 1.85, 1.90, 1.90, NonEmptyList(8, 42))),
-      Benchmark("ZDT4",
-                ZDT4F,
-                ZDT4.bounds,
-                ControlParameters(0.175, 1.85, 1.35, 1.85, NonEmptyList(5, 45))),
-      Benchmark("ZDT6",
-                ZDT6F,
-                ZDT6.bounds,
-                ControlParameters(0.600, 1.85, 1.55, 1.80, NonEmptyList(1, 49)))
+  def wfgObj(numObjectives: Int,
+             numDecisionVariables: Int,
+             swarms: NonEmptyList[Int]): BenchmarkSuite = {
+    val wfgBounds =
+      (0 until numDecisionVariables).toList.toNel.get.map(x => Interval(0.0, 2.0 * x + 1.0))
+    BenchmarkSuite(
+      "wfg" + numObjectives + "obj",
+      NonEmptyList(
+        Benchmark("WFG1", WFG.WFG1(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG2", WFG.WFG2(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG3", WFG.WFG3(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG4", WFG.WFG4(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG5", WFG.WFG5(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG6", WFG.WFG6(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG7", WFG.WFG7(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG8", WFG.WFG8(numObjectives), wfgBounds, ControlParameters(swarms)),
+        Benchmark("WFG9", WFG.WFG9(numObjectives), wfgBounds, ControlParameters(swarms))
+      )
     )
-  )
+  }
 
-  val WFG_2D = BenchmarkSuite(
-    "WFG.2D",
-    NonEmptyList(
-      Benchmark("WFG1.2D",
-                WFG1(2),
-                bounds,
-                ControlParameters(0.275, 1.65, 1.80, 1.75, NonEmptyList(45, 5))),
-      Benchmark("WFG2.2D",
-                WFG2(2),
-                bounds,
-                ControlParameters(0.750, 1.15, 1.70, 1.05, NonEmptyList(24, 26))),
-      Benchmark("WFG3.2D",
-                WFG3(2),
-                bounds,
-                ControlParameters(0.600, 1.60, 1.85, 0.95, NonEmptyList(31, 19))),
-      Benchmark("WFG4.2D",
-                WFG4(2),
-                bounds,
-                ControlParameters(0.100, 0.80, 1.65, 1.70, NonEmptyList(2, 48))),
-      Benchmark("WFG5.2D",
-                WFG5(2),
-                bounds,
-                ControlParameters(0.600, 0.80, 1.60, 1.85, NonEmptyList(50, 0))),
-      Benchmark("WFG6.2D",
-                WFG6(2),
-                bounds,
-                ControlParameters(0.525, 0.65, 0.60, 1.65, NonEmptyList(19, 31))),
-      Benchmark("WFG7.2D",
-                WFG7(2),
-                bounds,
-                ControlParameters(0.450, 1.20, 1.85, 1.55, NonEmptyList(29, 21))),
-      Benchmark("WFG8.2D",
-                WFG8(2),
-                bounds,
-                ControlParameters(0.750, 1.00, 1.65, 1.05, NonEmptyList(37, 13))),
-      Benchmark("WFG9.2D",
-                WFG9(2),
-                bounds,
-                ControlParameters(0.275, 1.00, 0.50, 1.70, NonEmptyList(13, 37)))
+  def dtlzObj(numObjectives: Int,
+              numDecisionVariables: Int,
+              swarms: NonEmptyList[Int]): BenchmarkSuite = {
+    val dtlzBounds =
+      (0 until numDecisionVariables).toList.toNel.get.map(x => Interval(0.0, 1.0))
+    BenchmarkSuite(
+      "dtlz" + numObjectives + "obj",
+      NonEmptyList(
+        Benchmark("DTLZ1",
+                  DTLZ.DTLZ1F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ2",
+                  DTLZ.DTLZ2F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ3",
+                  DTLZ.DTLZ3F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ4",
+                  DTLZ.DTLZ4F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ5",
+                  DTLZ.DTLZ5F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ6",
+                  DTLZ.DTLZ6F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+        Benchmark("DTLZ7",
+                  DTLZ.DTLZ7F(numObjectives, numDecisionVariables),
+                  dtlzBounds,
+                  ControlParameters(swarms)),
+      )
     )
-  )
+  }
 
-  val OnlyWFG6_2D = BenchmarkSuite(
-    "WFG6.2D",
-    NonEmptyList(
-      Benchmark("WFG6.2D.All",
-                WFG6(2),
-                bounds,
-                ControlParameters(0.525, 0.65, 0.60, 1.65, NonEmptyList(19, 31)))
-    )
-  )
+  def zdtObj(swarms: NonEmptyList[Int]): BenchmarkSuite = {
+    val zdt1Bounds = Interval(0.0, 1.0) ^ 30
+    val zdt2Bounds = Interval(0.0, 1.0) ^ 30
+    val zdt3Bounds = Interval(0.0, 1.0) ^ 30
+    val zdt4Bounds = Interval(0.0, 1.0) <:: (Interval(-5.0, 5.0) ^ 9)
+    val zdt6Bounds = Interval(0.0, 1.0) ^ 10
 
-  val WFG_3D = BenchmarkSuite(
-    "WFG.3D",
-    NonEmptyList(
-      Benchmark("WFG1.3D",
-                WFG1(3),
-                bounds,
-                ControlParameters(0.125, 1.20, 1.30, 1.75, NonEmptyList(37, 4, 9))),
-      Benchmark("WFG2.3D",
-                WFG2(3),
-                bounds,
-                ControlParameters(0.275, 1.25, 1.40, 1.70, NonEmptyList(24, 25, 1))),
-      Benchmark("WFG3.3D",
-                WFG3(3),
-                bounds,
-                ControlParameters(0.525, 1.65, 1.75, 0.75, NonEmptyList(29, 10, 11))),
-      Benchmark("WFG4.3D",
-                WFG4(3),
-                bounds,
-                ControlParameters(0.275, 1.75, 0.50, 1.05, NonEmptyList(29, 21, 0))),
-      Benchmark("WFG5.3D",
-                WFG5(3),
-                bounds,
-                ControlParameters(0.575, 0.60, 1.85, 1.75, NonEmptyList(2, 48, 0))),
-      Benchmark("WFG6.3D",
-                WFG6(3),
-                bounds,
-                ControlParameters(0.300, 0.90, 0.90, 1.90, NonEmptyList(5, 30, 15))),
-      Benchmark("WFG7.3D",
-                WFG7(3),
-                bounds,
-                ControlParameters(0.425, 1.45, 1.50, 1.40, NonEmptyList(10, 22, 18))),
-      Benchmark("WFG8.3D",
-                WFG8(3),
-                bounds,
-                ControlParameters(0.425, 0.95, 1.75, 1.85, NonEmptyList(4, 23, 23))),
-      Benchmark("WFG9.3D",
-                WFG9(3),
-                bounds,
-                ControlParameters(0.275, 1.25, 0.75, 1.50, NonEmptyList(4, 45, 1)))
+    BenchmarkSuite(
+      "ZDT",
+      NonEmptyList(
+        Benchmark("ZDT1", ZDT.ZDT1F, zdt1Bounds, ControlParameters(swarms)),
+        Benchmark("ZDT2", ZDT.ZDT2F, zdt2Bounds, ControlParameters(swarms)),
+        Benchmark("ZDT3", ZDT.ZDT3F, zdt3Bounds, ControlParameters(swarms)),
+        Benchmark("ZDT4", ZDT.ZDT4F, zdt4Bounds, ControlParameters(swarms)),
+        Benchmark("ZDT6", ZDT.ZDT6F, zdt6Bounds, ControlParameters(swarms))
+      )
     )
-  )
+  }
 }
