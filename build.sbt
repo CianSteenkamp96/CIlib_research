@@ -374,4 +374,4 @@ lazy val io = project
 
 enablePlugins(PackPlugin)
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-packMain := Map("MGPSO_DTLZ_3Obj" -> "cilib.research.Main")
+packMain := Map("SubswarmsGen" -> "cilib.research.SubswarmsGen")
