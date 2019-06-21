@@ -1,7 +1,7 @@
 package cilib.research.mgpso
 import cilib.research.MGArchive
 import cilib.research.core.{Benchmark, Position}
-import cilib.{Dist, RNG, RVar, Step, StepS} // RNG new
+import cilib.{Dist, RVar, Step, StepS}
 import scalaz._
 import Scalaz._
 import spire.implicits._ // NEW
@@ -181,8 +181,8 @@ object MGPSO {
           _ <- insertIntoArchive(x)
           cog <- pbest(x)
           soc <- gbest(envX)(x, collection)
-//          v <- calcVelocity(x, soc, cog, envX.controlParameters.w, envX.controlParameters.c1, envX.controlParameters.c2, envX.controlParameters.c3)
-          v <- calcVelocity(x, soc, cog)
+//          v <- calcVelocity(x, soc, cog, envX.controlParameters.w, envX.controlParameters.c1, envX.controlParameters.c2, envX.controlParameters.c3) // Old calcVelocity with fixed ctrl params.
+          v <- calcVelocity(x, soc, cog) // New calcVelocity which generates random ctrl params satisfying the MGPSO stability criteria.
           p <- stdPosition(x, v)
           p2 <- multiEval(envX)(p)
           p3 <- updateVelocity(p2, v)
