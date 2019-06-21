@@ -46,6 +46,7 @@ object MGPSO {
       p: MGParticle): StepS[Double, MGArchive, MGParticle] =
     if (p.pos.isInbounds) updatePBest(envX)(p) else MGStep.stepPure[Double, MGParticle](p)
 
+  // Old calcVelocity still accepting static/fixed w, c1, c2, and c3 ctrl param values.
 //  private def calcVelocity(particle: MGParticle,
 //                   social: Position,
 //                   cognitive: Position,
@@ -82,50 +83,6 @@ object MGPSO {
 //    })
 
   /////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////
-  // Calc velocity with random control params w, c1, c2, c3 which satisfies mgpso convergence criteria
-//  private def calcVelocity(particle: MGParticle,
-//                           social: Position,
-//                           cognitive: Position) = {
-//
-//    val wc123 = satisfyStabilityCriteria(particle.lambda.value.eval(RNG.fromTime).head).eval(RNG.fromTime) // Correct way to access lambda double value? Also, why is lambda an RVar[NEL[Double]] and not just Rvar[Double] or just Double????????
-//    val wc123Final = if(wc123.isDefined) (wc123.get._1, wc123.get._2, wc123.get._3, wc123.get._4) else (0.356, 1.222, 1.3, 1.517) // if finding suitable params took too long then return 'default' ctrl param vals.
-//                                                                                                                                  // These were calculated as the average value per ctrl param over all 9 WFG problems taken from the optimal WFG 3 objective parameters.
-//                                                                                                                                  // A.k.a => 3 objective WFG 1-9 w vals / 9, 3 objective WFG 1-9 c1 vals / 9, etc...
-//                                                                                                                                  // These values satisfy the convergence condition for MGPSO (lambda vals were chosen (0, 1) and still satisfied the stability criteria regardless of lambda).
-////    particle.lambda.value.map()
-//    val w = wc123Final._1
-//    val c1 = wc123Final._2
-//    val c2 = wc123Final._3
-//    val c3 = wc123Final._4
-//
-//    MGStep.withArchive[Double, Position](archive => {
-//      if (archive.isEmpty) {
-//        Step.liftR(
-//          for {
-//            cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-//            soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-//          } yield (w *: particle.velocity) + (c1 *: cog) + (c2 *: soc)
-//        )
-//      } else {
-//        Step.liftR(
-//          RVar
-//            .shuffle(archive.values.toNel.get)
-//            .flatMap(archiveList => {
-//              val tournament = archiveList.toList.take(3)
-//              val archiveGuide = CrowdingDistance.leastCrowded(tournament)
-//              for {
-//                cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-//                soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-//                arc <- (archiveGuide.pos - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-//                lambda <- particle.lambda.value
-//              } yield {
-//                (w *: particle.velocity) + (c1 *: cog) + (lambda *>: (c2 *: soc)) + (lambda.map(x =>
-//                  1 - x) *>: (c3 *: arc))
-//              }
-//            }))
-//      }
-//    })
-//  }
   private def calcVelocity(particle: MGParticle,
                            social: Position,
                            cognitive: Position): StepS[Double, MGArchive, Position] =
@@ -134,13 +91,11 @@ object MGPSO {
         Step.liftR( 								 // ... and this code block.
           for {
             wc123 <- particle.lambda.value.map(list => satisfyStabilityCriteria(list.head))
-            wc123Final = wc123
-              .eval(RNG.fromTime)
-              .getOrElse((0.356, 1.222, 1.3, 1.517)) // Still eval here?
-            w = wc123Final._1
-            c1 = wc123Final._2
-            c2 = wc123Final._3
-            c3 = wc123Final._4
+            weights <- wc123
+            (w, c1, c2, c3) = weights.getOrElse((0.356, 1.222, 1.3, 1.517)) // if finding suitable params took too long then return 'default' ctrl param vals.
+                                                                            // These were calculated as the average value per ctrl param over all 9 WFG problems taken from the optimal WFG 3 objective parameters.
+                                                                            // A.k.a => 3 objective WFG 1-9 w vals / 9, 3 objective WFG 1-9 c1 vals / 9, etc...
+                                                                            // These values satisfy the convergence condition for MGPSO (lambda vals were chosen (0, 1) and still satisfied the stability criteria regardless of lambda).
             cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
             soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
           } yield (w *: particle.velocity) + (c1 *: cog) + (c2 *: soc)
@@ -154,13 +109,11 @@ object MGPSO {
               val archiveGuide = CrowdingDistance.leastCrowded(tournament)
               for {
                 wc123 <- particle.lambda.value.map(list => satisfyStabilityCriteria(list.head))
-                wc123Final = wc123
-                  .eval(RNG.fromTime)
-                  .getOrElse((0.356, 1.222, 1.3, 1.517)) // Still eval here?
-                w = wc123Final._1
-                c1 = wc123Final._2
-                c2 = wc123Final._3
-                c3 = wc123Final._4
+                weights <- wc123
+                (w, c1, c2, c3) = weights.getOrElse((0.356, 1.222, 1.3, 1.517)) // if finding suitable params took too long then return 'default' ctrl param vals.
+                                                                                // These were calculated as the average value per ctrl param over all 9 WFG problems taken from the optimal WFG 3 objective parameters.
+                                                                                // A.k.a => 3 objective WFG 1-9 w vals / 9, 3 objective WFG 1-9 c1 vals / 9, etc...
+                                                                                // These values satisfy the convergence condition for MGPSO (lambda vals were chosen (0, 1) and still satisfied the stability criteria regardless of lambda).
                 cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
                 soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
                 arc <- (archiveGuide.pos - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
@@ -172,8 +125,9 @@ object MGPSO {
             }))
       }
     })
+
   /////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////
-  // Thanks Gary for the help
+  // Thanks, Gary Pampara for the help with this method.
   def satisfyStabilityCriteria(lambda: Double): RVar[Option[(Double, Double, Double, Double)]] = {
     def generator(counter: Int): RVar[Option[(Int, (Double, Double, Double, Double))]] =
       for {
