@@ -12,24 +12,44 @@ import scalaz.effect.{IO, SafeApp}
 object Main extends SafeApp {
 
   override def run(args: ImmutableArray[String]): IO[Unit] = {
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // This will be passed in through the CLI as CL params
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    if(args.length != 4) throw new Exception("Number of CL params needs to be 4 separated by spaces including: algoName (MGPSO or PMGPSO) numObjs (3, 5, 8, 10, or 15) numDims (30, 100, 500, or 1000) problemSuite (WFG or DTLZ).\n")
+    else if((args(0) != "MGPSO" && args(0) != "PMGPSO") ||
+      (args(1).toInt != 3 && args(1).toInt != 5 && args(1).toInt != 8 && args(1).toInt != 10 && args(1).toInt != 15) ||
+      (args(2).toInt != 30 && args(2).toInt != 100 && args(2).toInt != 500 && args(2).toInt != 1000) ||
+      (args(3) != "WFG" && args(3) != "DTLZ")) throw new Exception("CL params needs to be: algoName (MGPSO or PMGPSO) numObjs (3, 5, 8, 10, or 15) numDims (30, 100, 500, or 1000) problemSuite (WFG or DTLZ).\n")
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // This (or at least some of it) will be passed in through the CLI as CL params. Some fixed for convenience of research. But the code can easily be changed to set everything through the CL.
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     val algoName
-      : String = "PMGPSO" // 'MGPSO' or 'PMGPSO' - still to possibly implement KnMGPSO, KnPMGPSO
-    // see note in office cupboard explaining different Knea Point MGPSO options/configs/combos of insert policies and archive guide selection
-    val lambdaStrategy: String = "R" // 'R', 'STD', 'LI', 'LD', 'RI', or 'RIJ'
-    val iterations: Int = 100 // #iterations per independent sample/run
-    val independentRuns: Int = 3 // #independent samples
-    val numDecisionVariables: Int = 30 // #dimensions in the decision space
-    val swarms
-      : NonEmptyList[Int] = List.fill(15)(10).toNel.get // NonEmptyList of sub swarm divisions;
+      : String = args(0) // algorithm name: 'MGPSO' or 'PMGPSO' - still to possibly implement KnMGPSO, KnPMGPSO
+                          // see note in office cupboard explaining different Knea Point MGPSO options/configs/combos of insert policies and archive guide selection
+    val lambdaStrategy: String = "R" // lambda strategy: 'R', 'STD', 'LI', 'LD', 'RI', or 'RIJ'
+    val iterations: Int = 10000 // #iterations per independent sample/run: 10 000
+    val independentRuns: Int = 30 // #independent samples: 30
+    val numObj: Int = args(1).toInt // #obj: 3, 5, 8, 10, or 15
+    val numDecisionVariables: Int = args(2).toInt // #dimensions in the decision space: 30, 100, 500, or 1000
+    val subswarms3obj: NonEmptyList[Int] = NonEmptyList(51, 51, 51) // 153
+    val subswarms5obj: NonEmptyList[Int] = NonEmptyList(25, 25, 25, 25, 26) // 126
+    val subswarms8obj: NonEmptyList[Int] = NonEmptyList(19, 19, 19, 19, 19, 19, 19, 20) // 156
+    val subswarms10obj: NonEmptyList[Int] = NonEmptyList(11, 11, 11, 11, 11, 11, 11, 11, 11, 11) // 110
+    val subswarms15obj: NonEmptyList[Int] = NonEmptyList(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9) // 135
+
+    // NonEmptyList of sub swarm divisions;
     // number of objectives equal to the size of the swarms NonEmptyList,
     // that is, each element in the NEL represents a sub swarm's size
-    val benchmarkSuiteName: String = "WFG" // 'WFG','DTLZ', or 'ZDT'
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    val swarms
+      : NonEmptyList[Int] = if(numObj == 3) subswarms3obj
+                            else if(numObj == 5) subswarms5obj
+                            else if(numObj == 8) subswarms8obj
+                            else if(numObj == 10) subswarms10obj
+                            else if(numObj == 15) subswarms15obj
+                            else throw new Exception("Number of objectives supported: 3, 5, 8, 10 or 15.\n")
+    val benchmarkSuiteName: String = args(3) // problem suite: 'WFG', 'DTLZ' or 'ZDT'
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     val numObjectives: Int = swarms.size // #dimensions in the objective/solution space
 
+    // Unnecessary to checks here since done above
     val benchmarkSuite =
       if (benchmarkSuiteName == "WFG")
         BenchmarkSuite.wfgObj(numObjectives, numDecisionVariables, swarms)
@@ -37,12 +57,12 @@ object Main extends SafeApp {
         BenchmarkSuite.dtlzObj(numObjectives, numDecisionVariables, swarms)
       else if (benchmarkSuiteName == "ZDT")
         if (numObjectives != 2)
-          throw new Exception("ZDT is bi-objective.")
+          throw new Exception("ZDT is bi-objective.\n")
         else
           BenchmarkSuite.zdtObj(swarms = swarms) // ZDT is only bi-objective and has its own specific number of decision variables
       else
         throw new Exception(
-          "Test suite should be one of the following: \"WFG\", \"DTLZ\", or \"ZDT\"")
+          "Test suite should be one of the following: \"WFG\", \"DTLZ\", or \"ZDT\".\n")
 
     val simulationsIO = benchmarkSuite.benchmarks.traverse1(b => {
       val bounds = b.bounds
@@ -61,7 +81,7 @@ object Main extends SafeApp {
           LambdaStrategy.RandomIJ(bounds)
         else
           throw new Exception(
-            "Lambda strategy can only be one of the following: \"STD\", \"LI\", \"LD\", \"R\", \"RI\", or \"RIJ\"")
+            "Lambda strategy can only be one of the following: \"STD\", \"LI\", \"LD\", \"R\", \"RI\", or \"RIJ\".\n")
       Simulation.runIO(algoName,
                        numObjectives,
                        numDecisionVariables,
