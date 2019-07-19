@@ -25,7 +25,7 @@ object Main extends SafeApp {
       : String = args(0) // algorithm name: 'MGPSO' or 'PMGPSO' - still to possibly implement KnMGPSO, KnPMGPSO
                           // see note in office cupboard explaining different Knea Point MGPSO options/configs/combos of insert policies and archive guide selection
     val lambdaStrategy: String = "R" // lambda strategy: 'R', 'STD', 'LI', 'LD', 'RI', or 'RIJ'
-    val iterations: Int = 1000 // #iterations per independent sample/run: 10 000 or 1000
+    val iterations: Int = 2000 // #iterations per independent sample/run
     val independentRuns: Int = 30 // #independent samples: 30
     val numObj: Int = args(1).toInt // #obj: 3, 5, 8, 10, or 15
     val numDecisionVariables: Int = args(2).toInt // #dimensions in the decision space: 30, 100, 500, or 1000

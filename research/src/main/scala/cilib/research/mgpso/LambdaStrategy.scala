@@ -18,7 +18,7 @@ case class LambdaStrategy(name: String,
 
   def evalValue(rng: RNG): LambdaStrategy =
     name match {
-      case "R"   => this.copy(state = Dist.stdUniform.replicateM(1000).eval(rng))
+      case "R"   => this.copy(state = Dist.stdUniform.replicateM(3000).eval(rng))
       case _     => this
     }
 

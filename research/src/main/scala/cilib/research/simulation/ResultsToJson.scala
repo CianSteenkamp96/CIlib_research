@@ -9,7 +9,7 @@ object ResultsToJson {
   def finalArchive(run: Int, iteration: Int, archive: MGArchive, maxIterations: Int): String = {
 //    if(iteration === maxIterations) {
 //    if(iteration % (maxIterations / 20) == 0) { // save more (or less) data to file
-    if(iteration % 10 == 0) { // save more (or less) data to file. For 1000 max iterations save 100 results.
+    if(iteration % 10 == 0) { // save more (or less) data to file. For 2000 max iterations save 200 results.
       "{ \"archive\": [" +
         archive.values
           .map(x => "[" + x.pos.fitness.toList.mkString(",") + "]")
