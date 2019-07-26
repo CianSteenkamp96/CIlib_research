@@ -1,5 +1,5 @@
 // Cian Steenkamp
-// Based on jMetal implementation of DTLZ problems/functions
+// Based on jMetal's implementation of DTLZ problems/functions
 ////////////////////////////////////////////// NEW - Bounds moved //////////////////////////////////////////////
 
 package cilib.research.benchmarks.dtlz

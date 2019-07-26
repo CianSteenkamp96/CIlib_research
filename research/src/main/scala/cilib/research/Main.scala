@@ -59,7 +59,7 @@ object Main extends SafeApp {
                             else if(numObj == 10) subswarms10obj
                             else if(numObj == 15) subswarms15obj
                             else throw new Exception("Number of objectives supported: 3, 5, 8, 10 or 15.\n")
-    val benchmarkSuiteName: String = args(3) // problem suite: 'WFG', 'DTLZ' or 'ZDT'
+    val benchmarkSuiteName: String = args(3) // problem suite: 'WFG' or 'DTLZ'
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     val numObjectives: Int = swarms.size // #dimensions in the objective/solution space
 
