@@ -374,4 +374,4 @@ lazy val io = project
 
 enablePlugins(PackPlugin)
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-packMain := Map("MGPSO_PMGPSO" -> "cilib.research.Main")
+packMain := Map("mgpso_pmgpso" -> "cilib.research.Main")
