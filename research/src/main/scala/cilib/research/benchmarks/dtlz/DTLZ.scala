@@ -46,18 +46,18 @@ sealed abstract class DTLZ {
           val rslt = z.zipWithIndex.foldLeft(1.0 + g)(
             (acc, next) =>
               if (next._2 < aux)
-                acc * Math.cos(Math.pow(next._1, DTLZ4.alpha)) * (Math.PI / 2.0)
+                acc * Math.cos(Math.pow(next._1, DTLZ4.alpha) * (Math.PI / 2.0))
               else
                 acc
           )
           if (i != 0)
-            rslt * Math.cos(Math.pow(z.toList(aux), DTLZ4.alpha)) * (Math.PI / 2.0)
+            rslt * Math.sin(Math.pow(z.toList(aux), DTLZ4.alpha) * (Math.PI / 2.0))
           else
             rslt
         })
       case DTLZ5 | DTLZ6 =>
         val t = Math.PI / (4.0 * (1.0 + g))
-        val theta = (0 until m).map(
+        val theta = (0 until (m - 1)).map(
           i =>
             if (i == 0)
               z.head * Math.PI / 2.0
@@ -82,9 +82,14 @@ sealed abstract class DTLZ {
           i =>
             if (i < (m - 1))
               z.toList(i)
-            else
-              (1 + g) * z.foldLeft(0.0)((acc, next) =>
-                acc + (next / (1.0 + g)) * (1 + Math.sin(3.0 * Math.PI * next))))
+            else // i == m - 1
+              (1 + g) * (m - z.zipWithIndex.foldLeft(0.0)((acc, next) => // curr for current might have been better naming instead of next (next in the list)
+                if(next._2 < z.length - 1)
+                  acc + (next._1 / (1.0 + g)) * (1 + Math.sin(3.0 * Math.PI * next._1))
+                else
+                  acc
+              ))
+        )
     }
 
   def calcG(k: Int, nel: NonEmptyList[Double]): Double =
