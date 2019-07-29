@@ -13,6 +13,8 @@ object Main extends SafeApp {
 
   override def run(args: ImmutableArray[String]): IO[Unit] = {
     // These checks are specific for my research
+    // Not sure if asserts will be better
+    // Throwing exceptions not pure - maybe improve at a later stage
     if(args.length != 4 && args.length != 5) throw new Exception("Number of CL params needs to be at least 4 separated by spaces including: algoName (MGPSO or PMGPSO) numObjs (3, 5, 8, 10, or 15) numDims (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) problemNum (Note this parameter is optional - if left unspecified the entire problem suite will be included. For WFG: 1, 2, ..., or 9; For DTLZ: 1, 2, ..., or 7).\n")
     else if((args(0) != "MGPSO" && args(0) != "PMGPSO") ||
       (args(1).toInt != 3 && args(1).toInt != 5 && args(1).toInt != 8 && args(1).toInt != 10 && args(1).toInt != 15) ||
