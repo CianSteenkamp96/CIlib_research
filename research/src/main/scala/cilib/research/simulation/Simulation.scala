@@ -30,7 +30,7 @@ object Simulation {
             iterations: Int,
             independentRuns: Int): IO[Unit] =
     for {
-      _ <- IO(clearFile(algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + numObjectives + "obj." + numDecisionVariables + "D"))
+      _ <- IO(clearFile(algoName + "." + lambdaStrategy.name + "." + benchmark.name + ".M" + numObjectives + ".D" + numDecisionVariables))
       _ <- (1 to independentRuns).toList.traverse(runCount => {
 
         val rng = RNG.init(10L + runCount.toLong)
@@ -60,7 +60,7 @@ object Simulation {
 
         val stream = merge
           .mergeN(20)(measured)
-          .to(csvSinkAppend[String](new File(algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + "M" + numObjectives + ".D" + numDecisionVariables)))
+          .to(csvSinkAppend[String](new File(algoName + "." + lambdaStrategy.name + "." + benchmark.name + ".M" + numObjectives + ".D" + numDecisionVariables)))
           .run
 
         for {
