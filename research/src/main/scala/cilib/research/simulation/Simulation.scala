@@ -60,11 +60,11 @@ object Simulation {
 
         val stream = merge
           .mergeN(20)(measured)
-          .to(csvSinkAppend[String](new File(algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + numObjectives + "obj." + numDecisionVariables + "D")))
+          .to(csvSinkAppend[String](new File(algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + "M" + numObjectives + ".D" + numDecisionVariables)))
           .run
 
         for {
-          _ <- putStr(List(algoName, lambdaStrategy.name, benchmark.name, numObjectives + "obj", numDecisionVariables + "D", "run: " + runCount).mkString(" - "))
+          _ <- putStr(List(algoName, lambdaStrategy.name, benchmark.name, "M" + numObjectives, "D" + numDecisionVariables, "run: " + runCount).mkString(" - "))
           timeTaken <- IO {
             val start = System.nanoTime()
             stream.unsafePerformSync
