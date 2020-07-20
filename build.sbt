@@ -87,22 +87,22 @@ lazy val commonSettings = Seq(
     |import spire.implicits._
     |""".stripMargin,
   // MiMa related
-  previousArtifactVersion := { // Can this be done nicer/safer?
-    import org.eclipse.jgit.api._
-    import org.eclipse.jgit.lib.Constants
-
-    val git = Git.open(new java.io.File("."))
-    val tags = git.tagList.call()
-    val current = git.getRepository.resolve(Constants.HEAD)
-
-    val lastTag = tags.get(tags.size - 1)
-    val name =
-      if (lastTag.getObjectId.getName == current.getName) tags.get(tags.size - 2).getName
-      else lastTag.getName
-
-    name.replace("refs/tags/v", "")
-  },
-  mimaPreviousArtifacts := Set(organization.value %% moduleName.value % previousArtifactVersion.value)
+//  previousArtifactVersion := { // Can this be done nicer/safer?
+//    import org.eclipse.jgit.api._
+//    import org.eclipse.jgit.lib.Constants
+//
+//    val git = Git.open(new java.io.File("."))
+//    val tags = git.tagList.call()
+//    val current = git.getRepository.resolve(Constants.HEAD)
+//
+//    val lastTag = tags.get(tags.size - 1)
+//    val name =
+//      if (lastTag.getObjectId.getName == current.getName) tags.get(tags.size - 2).getName
+//      else lastTag.getName
+//
+//    name.replace("refs/tags/v", "")
+//  },
+//  mimaPreviousArtifacts := Set(organization.value %% moduleName.value % previousArtifactVersion.value)
 )
 
 lazy val noPublishSettings = Seq(
@@ -314,7 +314,11 @@ lazy val research = project
       moduleName := "cilib-research",
       libraryDependencies ++= Seq(
         "net.cilib" %% "benchmarks" % "0.1.1",
-        "org.scalaz" %% "scalaz-effect" % scalazVersion
+        "org.scalaz" %% "scalaz-effect" % scalazVersion,
+        // for knee points calc - nullspace
+        // http://ejml.org/wiki/index.php?title=Main_Page
+        // one '%' for java
+        "org.ejml" % "ejml-all" % "0.39"
       )
     ))
 
@@ -372,6 +376,6 @@ lazy val io = project
       )
     ))
 
+// for jar creation
 enablePlugins(PackPlugin)
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-packMain := Map("mgpso_pmgpso" -> "cilib.research.Main")
+packMain := Map("mgpso_pmgpso_knmgpso" -> "cilib.research.Main")

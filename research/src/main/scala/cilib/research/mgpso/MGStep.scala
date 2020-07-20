@@ -1,4 +1,5 @@
 package cilib.research.mgpso
+
 import cilib.research.MGArchive
 import cilib.{Step, StepS}
 import scalaz.StateT

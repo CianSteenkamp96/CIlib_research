@@ -30,6 +30,7 @@ case class Benchmark(name: String,
     x.toList(index) < y.toList(index)
 
   def toStaticProblem: Process[Task, Problem[Double]] =
-    Runner.staticProblem(name + " " + controlParameters.swarmSizes.size + "-objectives", placeholderENV.eval) // Should this be more detailed?
+    Runner.staticProblem(name + " " + controlParameters.swarmSizes.size + "-objectives",
+                         placeholderENV.eval)
 
 }

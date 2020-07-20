@@ -5,14 +5,13 @@ import cilib.research.benchmarks.zdt._
 import scalaz.NonEmptyList
 import spire.math.Interval
 import spire.implicits._
-import cilib._ ////////////////////////////////////////////// NEW //////////////////////////////////////////////
+import cilib._
 
 import scalaz._
 import Scalaz._
 
 case class BenchmarkSuite(name: String, benchmarks: NonEmptyList[Benchmark])
 
-////////////////////////////////////////////// NEW //////////////////////////////////////////////
 object BenchmarkSuite {
 
   def wfgObj(numObjectives: Int,

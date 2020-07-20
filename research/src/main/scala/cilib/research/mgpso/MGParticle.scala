@@ -29,16 +29,12 @@ case class MGParticle(id: Int,
 
 object MGParticle {
 
-  def createCollection(benchmark: Benchmark, lambdaStrategy: LambdaStrategy): RVar[NonEmptyList[MGParticle]] =
-    benchmark
-      .controlParameters
-      .swarmSizes
-      .toList
-      .zipWithIndex
+  def createCollection(benchmark: Benchmark,
+                       lambdaStrategy: LambdaStrategy): RVar[NonEmptyList[MGParticle]] =
+    benchmark.controlParameters.swarmSizes.toList.zipWithIndex
       .flatMap(x =>
         if (x._1 >= 1) (1 to x._1).toList.map(_ => x._2)
-        else List()
-      )
+        else List())
       .zipWithIndex
       .toNel
       .get
@@ -48,7 +44,6 @@ object MGParticle {
           .flatMap(p => {
             Dist.stdUniform.map(lambda =>
               MGParticle(x._2, p, p, p.zeroed, x._1, lambdaStrategy.setValue(lambda)))
-          })
-      )
+          }))
 
 }

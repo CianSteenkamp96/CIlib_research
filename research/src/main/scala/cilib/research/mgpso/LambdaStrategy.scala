@@ -18,15 +18,14 @@ case class LambdaStrategy(name: String,
 
   def evalValue(rng: RNG): LambdaStrategy =
     name match {
-      case "R"   => this.copy(state = Dist.stdUniform.replicateM(3000).eval(rng))
-      case _     => this
+      case "R" => this.copy(state = Dist.stdUniform.replicateM(3000).eval(rng))
+      case _   => this
     }
-
 
   def setValue(x: Double): LambdaStrategy =
     name match {
       case "STD" => this.copy(value = value.map(l => l.map(_ => x)))
-      case _ => this
+      case _     => this
     }
 
 }

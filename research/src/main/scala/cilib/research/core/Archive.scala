@@ -20,29 +20,30 @@ final case class Unbounded() extends ArchiveBound
 
 sealed abstract class Archive[A] {
   import Archive._
-  def values: List[A] = // Cannot resolve symbol b ??????????????????????? if case x | y
+  def values: List[A] =
     this match {
       case Empty(_, _) | EmptyPD(_, _, _, _) =>
-        List() ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+        List()
       case NonEmpty(l, _, _) => l
       case NonEmptyPD(l, _, _, _, _) =>
-        l ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+        l
     }
 
-  def bound: ArchiveBound = // Cannot resolve symbol b ??????????????????????? if case x | y
+  def bound: ArchiveBound =
     this match {
       case Empty(b, _) => b
       case EmptyPD(b, _, _, _) =>
-        b ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+        b
       case NonEmpty(_, b, _) => b
       case NonEmptyPD(_, b, _, _, _) =>
-        b ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+        b
     }
 
   def insert(v: A): Archive[A] =
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
-      case EmptyPD(b, insertPolicy, freqs, i123) => NonEmptyPD(List(v), b, insertPolicy, freqs, i123) ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+      case EmptyPD(b, insertPolicy, freqs, i123) =>
+        NonEmptyPD(List(v), b, insertPolicy, freqs, i123)
       case NonEmpty(l, b, c) =>
         b match {
           case Bounded(limit, deletePolicy) =>
@@ -60,26 +61,38 @@ sealed abstract class Archive[A] {
             else
               NonEmpty[A](l, b, c)
         }
-      case NonEmptyPD(l, b, c, freqs, _) => ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+      case NonEmptyPD(l, b, c, freqs, _) =>
         val updated_freqs_and_indices = update_freqs_and_indices(freqs)
         b match {
           case Bounded(limit, deletePolicy) =>
             if (l.size < limit.value && l.forall(x => !c(x, v, updated_freqs_and_indices._2))) {
-              NonEmptyPD[A](v :: l, b, c, updated_freqs_and_indices._1, updated_freqs_and_indices._2)
-            } else if (l.size == limit.value && l.forall(x => !c(x, v, updated_freqs_and_indices._2))) {
+              NonEmptyPD[A](v :: l,
+                            b,
+                            c,
+                            updated_freqs_and_indices._1,
+                            updated_freqs_and_indices._2)
+            } else if (l.size == limit.value && l.forall(x =>
+                         !c(x, v, updated_freqs_and_indices._2))) {
               val selected = deletePolicy(l)
-              NonEmptyPD[A](v::l.filterNot(x => x.equals(selected)), b, c, updated_freqs_and_indices._1, updated_freqs_and_indices._2)
+              NonEmptyPD[A](v :: l.filterNot(x => x.equals(selected)),
+                            b,
+                            c,
+                            updated_freqs_and_indices._1,
+                            updated_freqs_and_indices._2)
             } else
               NonEmptyPD[A](l, b, c, updated_freqs_and_indices._1, updated_freqs_and_indices._2) // Note: freqs and indices updated even if insert fails
           case Unbounded() =>
             if (l.forall(x => !c(x, v, updated_freqs_and_indices._2)))
-              NonEmptyPD[A](v :: l, b, c, updated_freqs_and_indices._1, updated_freqs_and_indices._2)
+              NonEmptyPD[A](v :: l,
+                            b,
+                            c,
+                            updated_freqs_and_indices._1,
+                            updated_freqs_and_indices._2)
             else
               NonEmptyPD[A](l, b, c, updated_freqs_and_indices._1, updated_freqs_and_indices._2) // Note: freqs and indices updated even if insert fails
         }
     }
 
-  ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY PMGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   def update_freqs_and_indices(freqs: NonEmptyList[Int]): (NonEmptyList[Int], (Int, Int, Int)) =
     this match {
@@ -92,8 +105,9 @@ sealed abstract class Archive[A] {
           else el._1)
         (newFreqs, randomIndices)
       case Empty(_, _) | NonEmpty(_, _, _) =>
-        throw new Exception("update_freqs_and_indices only used by PMGPSO (EmptyPD and NonEmptyPD archives) - Not relevant for MGPSO (Empty and NonEmpty archives).")
-  }
+        throw new Exception(
+          "update_freqs_and_indices only used by PMGPSO (EmptyPD and NonEmptyPD archives) - Not relevant for MGPSO (Empty and NonEmpty archives).")
+    }
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY MGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   protected def removeDominatedAndInsert(v: A): Archive[A] =
@@ -103,8 +117,7 @@ sealed abstract class Archive[A] {
         val dominated =
           l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
         NonEmpty[A](v :: l.filterNot(dominated.contains), b, c)
-      case EmptyPD(_, _, _, _) |
-          NonEmptyPD(_, _, _, _, _) => ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+      case EmptyPD(_, _, _, _) | NonEmptyPD(_, _, _, _, _) =>
         throw new Exception(
           "removeDominatedAndInsert only used by MGPSO (Empty and NonEmpty archives) - Not relevant for PMGPSO (EmptyPD and NonEmptyPD archives).")
     }
@@ -117,35 +130,35 @@ sealed abstract class Archive[A] {
         val dominated =
           l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
         l.filterNot(dominated.contains)
-      case EmptyPD(_, _, _, _) |
-          NonEmptyPD(_, _, _, _, _) => ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
-        throw new Exception("removeDominatedAndInsert only used by MGPSO (Empty and NonEmpty archives) - Not relevant for PMGPSO (EmptyPD and NonEmptyPD archives).")
+      case EmptyPD(_, _, _, _) | NonEmptyPD(_, _, _, _, _) =>
+        throw new Exception(
+          "removeDominatedAndInsert only used by MGPSO (Empty and NonEmpty archives) - Not relevant for PMGPSO (EmptyPD and NonEmptyPD archives).")
     }
 
   def empty: Archive[A] =
     this match {
       case Empty(_, _) | EmptyPD(_, _, _, _) =>
-        this ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+        this
       case NonEmpty(_, b, c) => Empty(b, c)
       case NonEmptyPD(_, b, insertPolicy, freqs, i123) =>
-        EmptyPD(b, insertPolicy, freqs, i123) ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+        EmptyPD(b, insertPolicy, freqs, i123)
     }
 
   def isEmpty: Boolean =
     this match {
       case Empty(_, _) | EmptyPD(_, _, _, _) =>
-        true ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+        true
       case NonEmpty(_, _, _) | NonEmptyPD(_, _, _, _, _) =>
-        false ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+        false
     }
 
-  def size: Int = // Cannot resolve symbol b ??????????????????????? if case x | y
+  def size: Int =
     this match {
       case Empty(_, _) | EmptyPD(_, _, _, _) =>
-        0 ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+        0
       case NonEmpty(l, _, _) => l.size
       case NonEmptyPD(l, _, _, _, _) =>
-        l.size ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
+        l.size
 
     }
 }
@@ -179,8 +192,6 @@ object Archive {
   }
 
   ////////////////////////////////////////////////// FOR PARTIAL-DOMINANCE MGPSO (PMGPSO) ARCHIVE ///////////////////////////////////////////////////////
-
-  ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
   // Empty Archive using Partial-Dominance as insertPolicy
   private final case class EmptyPD[A](b: ArchiveBound,
                                       insertPolicy: (A, A, (Int, Int, Int)) => Boolean,
@@ -188,7 +199,6 @@ object Archive {
                                       i123: (Int, Int, Int))
       extends Archive[A]
 
-  ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
   // NonEmpty Archive using Partial-Dominance as insertPolicy
   private final case class NonEmptyPD[A](l: List[A],
                                          b: ArchiveBound,
@@ -197,7 +207,6 @@ object Archive {
                                          i123: (Int, Int, Int))
       extends Archive[A]
 
-  ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
   def boundedPD[A](limit: Int Refined Positive,
                    insertPolicy: (A, A, (Int, Int, Int)) => Boolean,
                    deletePolicy: List[A] => A,
@@ -205,13 +214,11 @@ object Archive {
                    i123: (Int, Int, Int)): Archive[A] =
     EmptyPD[A](Bounded(limit, deletePolicy), insertPolicy, freqs, i123)
 
-  ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
   def unboundedPD[A](insertPolicy: (A, A, (Int, Int, Int)) => Boolean,
                      freqs: NonEmptyList[Int],
                      i123: (Int, Int, Int)): Archive[A] =
     EmptyPD[A](Unbounded(), insertPolicy, freqs, i123)
 
-  ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
   def boundedNonEmptyPD[A](seeds: NonEmptyList[A],
                            limit: Int Refined Positive,
                            insertPolicy: (A, A, (Int, Int, Int)) => Boolean,
@@ -222,7 +229,6 @@ object Archive {
     seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
   }
 
-  ////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////////
   def unboundedNonEmptyPD[A](seeds: NonEmptyList[A],
                              insertPolicy: (A, A, (Int, Int, Int)) => Boolean,
                              freqs: NonEmptyList[Int],

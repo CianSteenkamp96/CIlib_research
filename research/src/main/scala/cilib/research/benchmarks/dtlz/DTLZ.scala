@@ -1,6 +1,5 @@
 // Cian Steenkamp
 // Based on jMetal's implementation of DTLZ problems/functions
-////////////////////////////////////////////// NEW - Bounds moved to BenchmarkSuite.scala//////////////////////////////////////////////
 
 package cilib.research.benchmarks.dtlz
 
@@ -18,7 +17,7 @@ sealed abstract class DTLZ {
               if (next._2 < aux)
                 acc * next._1
               else
-                acc
+              acc
           )
           if (i != 0)
             rslt * (1 - z.toList(aux))
@@ -33,7 +32,7 @@ sealed abstract class DTLZ {
               if (next._2 < aux)
                 acc * Math.cos(next._1 * 0.5 * Math.PI)
               else
-                acc
+              acc
           )
           if (i != 0)
             rslt * Math.sin(z.toList(aux) * 0.5 * Math.PI)
@@ -48,7 +47,7 @@ sealed abstract class DTLZ {
               if (next._2 < aux)
                 acc * Math.cos(Math.pow(next._1, DTLZ4.alpha) * (Math.PI / 2.0))
               else
-                acc
+              acc
           )
           if (i != 0)
             rslt * Math.sin(Math.pow(z.toList(aux), DTLZ4.alpha) * (Math.PI / 2.0))
@@ -70,7 +69,7 @@ sealed abstract class DTLZ {
               if (next._2 < aux)
                 acc * Math.cos(theta(next._2))
               else
-                acc
+              acc
           )
           if (i != 0)
             rslt * Math.sin(theta(aux))
@@ -83,12 +82,12 @@ sealed abstract class DTLZ {
             if (i < (m - 1))
               z.toList(i)
             else // i == m - 1
-              (1 + g) * (m - z.zipWithIndex.foldLeft(0.0)((acc, next) => // curr for current might have been better naming instead of next (next in the list)
-                if(next._2 < z.length - 1)
-                  acc + (next._1 / (1.0 + g)) * (1 + Math.sin(3.0 * Math.PI * next._1))
-                else
-                  acc
-              ))
+              (1 + g) * (m - z.zipWithIndex.foldLeft(0.0)(
+                (acc, next) => // curr for current might have been better naming instead of next (next in the list)
+                  if (next._2 < z.length - 1)
+                    acc + (next._1 / (1.0 + g)) * (1 + Math.sin(3.0 * Math.PI * next._1))
+                  else
+                  acc))
         )
     }
 

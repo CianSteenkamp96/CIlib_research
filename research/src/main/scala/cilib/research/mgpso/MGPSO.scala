@@ -4,9 +4,10 @@ import cilib.research.core.{Benchmark, Position}
 import cilib.{Dist, RVar, Step, StepS}
 import scalaz._
 import Scalaz._
-import spire.implicits._ // NEW
-import spire.math.Interval // NEW
+import spire.implicits._
+import spire.math.Interval
 
+// MGPSO, PMGPSO, and KnMGPSO
 object MGPSO {
 
   private def multiEval(envX: Benchmark)(particle: MGParticle) =
@@ -46,87 +47,87 @@ object MGPSO {
       p: MGParticle): StepS[Double, MGArchive, MGParticle] =
     if (p.pos.isInbounds) updatePBest(envX)(p) else MGStep.stepPure[Double, MGParticle](p)
 
-  // Old calcVelocity still accepting static/fixed w, c1, c2, and c3 ctrl param values.
-//  private def calcVelocity(particle: MGParticle,
-//                   social: Position,
-//                   cognitive: Position,
-//                   w: Double,
-//                   c1: Double,
-//                   c2: Double,
-//                   c3: Double) =
-//    MGStep.withArchive[Double, Position](archive => {
-//      if (archive.isEmpty) {
-//        Step.liftR(
-//          for {
-//            cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-//            soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-//          } yield (w *: particle.velocity) + (c1 *: cog) + (c2 *: soc)
-//        )
-//      } else {
-//        Step.liftR(
-//          RVar
-//            .shuffle(archive.values.toNel.get)
-//            .flatMap(archiveList => {
-//              val tournament = archiveList.toList.take(3)
-//              val archiveGuide = CrowdingDistance.leastCrowded(tournament)
-//              for {
-//                cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-//                soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-//                arc <- (archiveGuide.pos - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-//                lambda <- particle.lambda.value
-//              } yield {
-//                (w *: particle.velocity) + (c1 *: cog) + (lambda *>: (c2 *: soc)) + (lambda.map(x =>
-//                  1 - x) *>: (c3 *: arc))
-//              }
-//            }))
-//      }
-//    })
+  private def calcVelocity(
+      particle: MGParticle,
+      social: Position,
+      cognitive: Position,
+      R: NonEmptyList[Double] = NonEmptyList[Double](-1)): StepS[Double, MGArchive, Position] =
+    MGStep.withArchive[Double, Position](
+      archive => { // See Gitter chat with Kyle Erwin explaining this code block ...
+        if (archive.isEmpty) {
+          Step.liftR( // ... and this code block.
+            for {
+              wc123 <- particle.lambda.value.map(list => satisfyStabilityCriteria(list.head))
+              weights <- wc123
+              (w, c1, c2, _) = weights
+                .getOrElse((0.356, 1.222, 1.3, 1.517)) // if finding suitable params took too long then return 'default' ctrl param vals.
+              // These were calculated as the average value per ctrl param over all 9 WFG problems taken from the optimal WFG 3 objective parameters.
+              // A.k.a => 3 objective WFG 1-9 w vals / 9, 3 objective WFG 1-9 c1 vals / 9, etc...
+              // These values satisfy the convergence condition for MGPSO (lambda vals were chosen (0, 1) and still satisfied the stability criteria regardless of lambda).
+              cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
+              soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
+            } yield (w *: particle.velocity) + (c1 *: cog) + (c2 *: soc))
+        } else {
+          // NOTE !!! FOR KNMGPSO THE ARCHIVE AND ARCHIVE MANAGEMENT IS THE SAME BUT THE ARCHIVE GUIDE IS CHOSEN DIFFERENTLY!!!
+          // if MGPSO or PMGPSO
+          if (R.head == -1 && R.size == 1) {
+            Step.liftR(
+              RVar
+                .shuffle(archive.values.toNel.get)
+                .flatMap(archiveList => {
+                  val tournament = archiveList.toList.take(3)
+                  val archiveGuide: MGParticle = CrowdingDistance.leastCrowded(tournament)
 
-  /////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////
-  private def calcVelocity(particle: MGParticle,
-                           social: Position,
-                           cognitive: Position): StepS[Double, MGArchive, Position] =
-    MGStep.withArchive[Double, Position](archive => { // See Gitter chat with Kyle Erwin explaining this code block ...
-      if (archive.isEmpty) {
-        Step.liftR( 								 // ... and this code block.
-          for {
-            wc123 <- particle.lambda.value.map(list => satisfyStabilityCriteria(list.head))
-            weights <- wc123
-            (w, c1, c2, c3) = weights.getOrElse((0.356, 1.222, 1.3, 1.517)) // if finding suitable params took too long then return 'default' ctrl param vals.
-                                                                            // These were calculated as the average value per ctrl param over all 9 WFG problems taken from the optimal WFG 3 objective parameters.
-                                                                            // A.k.a => 3 objective WFG 1-9 w vals / 9, 3 objective WFG 1-9 c1 vals / 9, etc...
-                                                                            // These values satisfy the convergence condition for MGPSO (lambda vals were chosen (0, 1) and still satisfied the stability criteria regardless of lambda).
-            cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-            soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-          } yield (w *: particle.velocity) + (c1 *: cog) + (c2 *: soc)
-        )
-      } else {
-        Step.liftR(
-          RVar
-            .shuffle(archive.values.toNel.get)
-            .flatMap(archiveList => {
-              val tournament = archiveList.toList.take(3)
-              val archiveGuide = CrowdingDistance.leastCrowded(tournament)
-              for {
-                wc123 <- particle.lambda.value.map(list => satisfyStabilityCriteria(list.head))
-                weights <- wc123
-                (w, c1, c2, c3) = weights.getOrElse((0.356, 1.222, 1.3, 1.517)) // if finding suitable params took too long then return 'default' ctrl param vals.
-                                                                                // These were calculated as the average value per ctrl param over all 9 WFG problems taken from the optimal WFG 3 objective parameters.
-                                                                                // A.k.a => 3 objective WFG 1-9 w vals / 9, 3 objective WFG 1-9 c1 vals / 9, etc...
-                                                                                // These values satisfy the convergence condition for MGPSO (lambda vals were chosen (0, 1) and still satisfied the stability criteria regardless of lambda).
-                cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-                soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-                arc <- (archiveGuide.pos - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
-                lambda <- particle.lambda.value
-              } yield {
-                (w *: particle.velocity) + (c1 *: cog) + (lambda *>: (c2 *: soc)) + (lambda.map(x =>
-                  1 - x) *>: (c3 *: arc))
-              }
-            }))
-      }
-    })
+                  for {
+                    wc123 <- particle.lambda.value.map(list => satisfyStabilityCriteria(list.head))
+                    weights <- wc123
+                    (w, c1, c2, c3) = weights
+                      .getOrElse((0.356, 1.222, 1.3, 1.517)) // if finding suitable params took too long then return 'default' ctrl param vals.
+                    // These were calculated as the average value per ctrl param over all 9 WFG problems taken from the optimal WFG 3 objective parameters.
+                    // A.k.a => 3 objective WFG 1-9 w vals / 9, 3 objective WFG 1-9 c1 vals / 9, etc...
+                    // These values satisfy the convergence condition for MGPSO (lambda vals were chosen (0, 1) and still satisfied the stability criteria regardless of lambda).
+                    cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
+                    soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
+                    arc <- (archiveGuide.pos - particle.pos).traverse(x =>
+                      Dist.stdUniform.map(_ * x))
+                    lambda <- particle.lambda.value
+                  } yield {
+                    (w *: particle.velocity) + (c1 *: cog) + (lambda *>: (c2 *: soc)) + (lambda.map(
+                      x => 1 - x) *>: (c3 *: arc))
+                  }
+                }))
+          } else { // if KnMGPSO
+            Step.liftR(
+              RVar
+                .shuffle(archive.values.toNel.get)
+                .flatMap(archiveList => {
+                  // if neither = KP and same max distance to extremal hyperplane, return least crowded of the two particles.
+                  // Note that due to the way that '.take' works and the fact that we 'shuffle' the archive before this is executed in MGPSO.scala, therefore, choosing 2 'new' sols for the crowding distance tournament will actually use the same tournament participants as taken here.
+                  val archiveGuide: MGParticle = KneePoint
+                    .kneePoint(archiveList, R)
+                    .getOrElse(CrowdingDistance.leastCrowded(archiveList.toList.take(2)))
+                  for {
+                    wc123 <- particle.lambda.value.map(list => satisfyStabilityCriteria(list.head))
+                    weights <- wc123
+                    (w, c1, c2, c3) = weights
+                      .getOrElse((0.356, 1.222, 1.3, 1.517)) // if finding suitable params took too long then return 'default' ctrl param vals.
+                    // These were calculated as the average value per ctrl param over all 9 WFG problems taken from the optimal WFG 3 objective parameters.
+                    // A.k.a => 3 objective WFG 1-9 w vals / 9, 3 objective WFG 1-9 c1 vals / 9, etc...
+                    // These values satisfy the convergence condition for MGPSO (lambda vals were chosen (0, 1) and still satisfied the stability criteria regardless of lambda).
+                    cog <- (cognitive - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
+                    soc <- (social - particle.pos).traverse(x => Dist.stdUniform.map(_ * x))
+                    arc <- (archiveGuide.pos - particle.pos).traverse(x =>
+                      Dist.stdUniform.map(_ * x))
+                    lambda <- particle.lambda.value
+                  } yield {
+                    (w *: particle.velocity) + (c1 *: cog) + (lambda *>: (c2 *: soc)) + (lambda.map(
+                      x => 1 - x) *>: (c3 *: arc))
+                  }
+                }))
+          }
+        }
+      })
 
-  /////////////////////////////////////////////////// NEW ///////////////////////////////////////////////////
   // Thanks, Gary Pampara for the help with this method.
   def satisfyStabilityCriteria(lambda: Double): RVar[Option[(Double, Double, Double, Double)]] = {
     def generator(counter: Int): RVar[Option[(Int, (Double, Double, Double, Double))]] =
@@ -147,12 +148,12 @@ object MGPSO {
                 .pow(c3, 2)) * (1 + w))) / (3 * Math.pow((c1 + (lambda * c2) + ((1 - lambda) * c3)),
                                                          2)))))))
             RVar.pure(Some((counter, (w, c1, c2, c3))))
-          else
-			  if (counter > 10) RVar.pure(None) else generator(counter + 1) // If generating random values that satisfy the stability criteria takes to long then return None
+          else if (counter > 10) RVar.pure(None)
+          else generator(counter + 1) // If generating random values that satisfy the stability criteria takes to long then return None
         case None =>
           sys.error("impossible")
       }
-//    result.map(option => option.map(Tuple2 => Tuple2._2))
+    //    result.map(option => option.map(Tuple2 => Tuple2._2))
     result.map(_.map(_._2))
   }
 
@@ -170,18 +171,58 @@ object MGPSO {
   }
 
   private def insertIntoArchive(particle: MGParticle) =
-    MGStep.modifyArchive { archive => archive.insert(particle)
+    MGStep.modifyArchive { archive =>
+      archive.insert(particle)
     }
 
-  def mgpso(envX: Benchmark)
+  // desired_ratio_KPs_2_ND_sols => user defined parameter > 0 and < 1; represents the desired ratio of knee points to non-dominated solutions
+  def mgpso_pmgpso_knmgpso(envX: Benchmark, desired_ratio_KPs_2_ND_sols: Double = -1.0)
     : NonEmptyList[MGParticle] => MGParticle => StepS[Double, MGArchive, MGParticle] =
-    collection =>
-      x =>
+    collection => {
+      if (desired_ratio_KPs_2_ND_sols != -1.0) { // KnMGPSO
+        val fitnessValues: List[List[Double]] = collection.toList.map(x => x.pos.fitness.toList)
+        val numObjectives: Int = fitnessValues.head.size
+        // adaptive neighbourhood strategy
+
+        ////////////////////// FIX HERE !!! ///////////////////////////////////////////////////////
+        // Move to parameters and persist ???
+        // ratio of knee points to non-dominated solutions at iteration t − 1
+        // HOW TO UPDATE THIS ??? ALL KPS AT ITERATION T / ARCHIVE.SIZE ???
+        val prev_ratio_KPs_2_ND_sols: Int = 0
+        // ratio of the neighbourhood size to the range spanned by objective m at iteration t - 1
+        val prev_ratio = 1
+        //////////////////////////////////////////////////////////////////////////////////////////
+
+        // ratio of the neighbourhood size to the range spanned by objective m at iteration t
+        val ratio: Double = prev_ratio * math.pow(
+          math.E,
+          -(1 - (prev_ratio_KPs_2_ND_sols / desired_ratio_KPs_2_ND_sols)) / numObjectives)
+        // max for each objective
+        val maxes: List[Double] = fitnessValues.transpose.map(_.max)
+        // min for each objective
+        val mins: List[Double] = fitnessValues.transpose.map(_.min)
+        // size of neighbourhood for each objective
+        val R: NonEmptyList[Double] = (maxes, mins).zipped.map(_ - _).map(_ * ratio).toNel.get
+
+        assert(R.size == numObjectives)
+
+        x: MGParticle =>
+          for {
+            _ <- insertIntoArchive(x)
+            cog <- pbest(x)
+            soc <- gbest(envX)(x, collection)
+            v <- calcVelocity(x, soc, cog, R) // New calcVelocity which generates random ctrl params satisfying the MGPSO stability criteria.
+            p <- stdPosition(x, v)
+            p2 <- multiEval(envX)(p)
+            p3 <- updateVelocity(p2, v)
+            p4 <- updateLambda(p3)
+            updated <- updatePBestBounds(envX)(p4)
+          } yield updated
+      } else { x => // MGPSO or PMGPSO
         for {
           _ <- insertIntoArchive(x)
           cog <- pbest(x)
           soc <- gbest(envX)(x, collection)
-//          v <- calcVelocity(x, soc, cog, envX.controlParameters.w, envX.controlParameters.c1, envX.controlParameters.c2, envX.controlParameters.c3) // Old calcVelocity with fixed ctrl params.
           v <- calcVelocity(x, soc, cog) // New calcVelocity which generates random ctrl params satisfying the MGPSO stability criteria.
           p <- stdPosition(x, v)
           p2 <- multiEval(envX)(p)
@@ -189,5 +230,6 @@ object MGPSO {
           p4 <- updateLambda(p3)
           updated <- updatePBestBounds(envX)(p4)
         } yield updated
-
+      }
+    }
 }

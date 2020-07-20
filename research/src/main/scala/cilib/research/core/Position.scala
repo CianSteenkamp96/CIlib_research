@@ -1,12 +1,13 @@
 package cilib.research.core
+
 import cilib.{Dist, RVar}
 import scalaz.Scalaz._
 import scalaz._
 import spire.math.Interval
 
 case class Position(pos: NonEmptyList[Double],
-                     bounds: NonEmptyList[Interval[Double]],
-                     fitness: NonEmptyList[Double]) {
+                    bounds: NonEmptyList[Interval[Double]],
+                    fitness: NonEmptyList[Double]) {
 
   def map(f: Double => Double): Position =
     this.copy(pos = pos.map(f))
@@ -43,7 +44,5 @@ object Position {
   def createPosition(benchmark: Benchmark): RVar[Position] =
     benchmark.bounds
       .traverse(Dist.uniform)
-      .map(x =>
-        Position(x, benchmark.bounds, benchmark.f(x))
-      )
+      .map(x => Position(x, benchmark.bounds, benchmark.f(x)))
 }

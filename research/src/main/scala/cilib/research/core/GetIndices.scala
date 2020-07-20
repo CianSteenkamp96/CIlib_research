@@ -1,7 +1,5 @@
 // Cian Steenkamp
 
-// Note: Still some exceptions that might have to be removed - functional programming ! ! ! ! ! !
-
 package cilib.research.core
 import scalaz._
 import Scalaz._
@@ -29,7 +27,7 @@ object GetIndices {
       probs.map(f => f / total)
   }
 
-  // Returns 3 indices/objectives to be considered for diminance relation (partial-dominance)
+  // Returns 3 indices/objectives to be considered for dominance relation (partial-dominance)
   // This function prioritizes the indices/objectives with the largest probabilities (least chosen objectives) even more...
   // Since, only one pick is made to save time - previous versions made 3 picks and had a lot of repititions to ensure 3 unique indices
   // This implementation makes one pick, gets the index, and then chooses the other 2 indices as the 2 indices left of the chosen index (extra prioritization of lesser chosen objectives/indices)
@@ -53,13 +51,16 @@ object GetIndices {
             else
             None)
         .filter(_.isDefined)
-        if (indexIdentification.empty) throw new Exception("Error: pick did not satisfy any part of the stick.") // (stick.head._2, stick(1)._2, stick(2)._2) // should never be the case - just for safety
-        else if(indexIdentification.head.get == stick.reverse.head._2) (stick.head._2, stick(1)._2, stick.reverse.head._2) // if pick satisfies last part of stick
-        else if((indexIdentification.head.get == stick.head._2) || (indexIdentification.head.get == stick(1)._2) || (indexIdentification.head.get == stick(2)._2)) (stick.head._2, stick(1)._2, stick(2)._2) // if pick satisfies 1st, 2nd or 3rd part of stick from the front
-        else {
-          val i = stick.zipWithIndex.filter(_._1._2 == indexIdentification.head.get).head._2
-          (indexIdentification.head.get, stick(i - 1)._2, stick(i - 2)._2)
-        } // if pick satisfies part of stick in the middle (not 1st, 2nd, or 3rd, or last)
-    }
-    else throw new Exception("Error: NonEmptyList of probabilities size < 3.")
+      if (indexIdentification.empty)
+        throw new Exception("Error: pick did not satisfy any part of the stick.") // (stick.head._2, stick(1)._2, stick(2)._2) // should never be the case - just for safety
+      else if (indexIdentification.head.get == stick.reverse.head._2)
+        (stick.head._2, stick(1)._2, stick.reverse.head._2) // if pick satisfies last part of stick
+      else if ((indexIdentification.head.get == stick.head._2) || (indexIdentification.head.get == stick(
+                 1)._2) || (indexIdentification.head.get == stick(2)._2))
+        (stick.head._2, stick(1)._2, stick(2)._2) // if pick satisfies 1st, 2nd or 3rd part of stick from the front
+      else {
+        val i = stick.zipWithIndex.filter(_._1._2 == indexIdentification.head.get).head._2
+        (indexIdentification.head.get, stick(i - 1)._2, stick(i - 2)._2)
+      } // if pick satisfies part of stick in the middle (not 1st, 2nd, or 3rd, or last)
+    } else throw new Exception("Error: NonEmptyList of probabilities size < 3.")
 }
