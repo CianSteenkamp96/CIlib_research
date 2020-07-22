@@ -49,6 +49,7 @@ object Simulation {
           throw new Exception("The algorithm name should be \"MGPSO\", \"PMGPSO\", or \"KnMGPSO\".")
 
       if (algoName == "KnMGPSO" && desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1) {
+        val r_prevs = new R_prevs
         val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
           Runner.foldStepS(
             placeholderENV,
@@ -57,13 +58,14 @@ object Simulation {
             swarm,
             Runner.staticAlgorithm(
               lambdaStrategy.name,
-              Iteration.syncS(MGPSO.mgpso_pmgpso_knmgpso(benchmark, desired_ratio_KPs_2_ND_sols))),
+              Iteration.syncS(MGPSO.mgpso_pmgpso_knmgpso(benchmark, archive, r_prevs, desired_ratio_KPs_2_ND_sols))),
             benchmark.toStaticProblem,
             (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
           )
         }
-        simulation.take(iterations).pipe(measurement(runCount, iterations))
+        simulation.take(iterations).pipe(measurement(runCount, iterations, r_prevs))
       } else {
+        val r_prevs = new R_prevs
         // if desired_ratio_KPs_2_ND_sols is not equal to -1 at this point it WILL CAUSE KAK because checks are done throughout (MGPSO.scala and KneePoint.scala)
         // to check if desired_ratio_KPs_2_ND_sols is not equal to -1, in which case it is assumed that we are deailing with the KnMGPSO. Note the best way but heyyyy :)
         assert(desired_ratio_KPs_2_ND_sols == -1.0)
@@ -74,12 +76,12 @@ object Simulation {
             rng,
             swarm,
             Runner.staticAlgorithm(lambdaStrategy.name,
-                                   Iteration.syncS(MGPSO.mgpso_pmgpso_knmgpso(benchmark))),
+                                   Iteration.syncS(MGPSO.mgpso_pmgpso_knmgpso(benchmark, archive))),
             benchmark.toStaticProblem,
             (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
           )
         }
-        simulation.take(iterations).pipe(measurement(runCount, iterations))
+        simulation.take(iterations).pipe(measurement(runCount, iterations, r_prevs))
       }
     })
 
@@ -103,9 +105,9 @@ object Simulation {
     } yield ()
   }
 
-  private def measurement(run: Int, maxIterations: Int) =
+  private def measurement(run: Int, maxIterations: Int, r_prevs: R_prevs) =
     measureWithInfo[(MGArchive, NonEmptyList[MGParticle]), Unit, String]((info, collection) =>
-      ResultsToJson.finalArchive(run, info.iteration, collection._1, maxIterations))
+      ResultsToJson.finalArchive(run, info.iteration, collection._1, maxIterations, r_prevs))
 
   private def clearFile(fileName: String): Unit = {
     val fileWriter = new java.io.PrintWriter(new File(fileName))

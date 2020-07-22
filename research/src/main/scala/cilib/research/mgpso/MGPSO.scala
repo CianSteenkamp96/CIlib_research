@@ -10,7 +10,8 @@ import spire.math.Interval
 // MGPSO, PMGPSO, and KnMGPSO
 object MGPSO {
 
-  private def multiEval(envX: Benchmark)(particle: MGParticle) =
+  private def multiEval(envX: Benchmark)(
+      particle: MGParticle): StepS[Double, MGArchive, MGParticle] =
     MGStep.stepPure[Double, MGParticle] {
       val fitness = if (particle.pos.isInbounds) {
         envX.f(particle.pos.pos)
@@ -20,7 +21,9 @@ object MGPSO {
       particle.updateFitness(fitness)
     }
 
-  private def gbest(envX: Benchmark)(particle: MGParticle, collection: NonEmptyList[MGParticle]) =
+  private def gbest(envX: Benchmark)(
+      particle: MGParticle,
+      collection: NonEmptyList[MGParticle]): StepS[Double, MGArchive, Position] =
     MGStep.stepPure[Double, Position] {
       val x = collection.toList
         .filter(x => x.swarmID == particle.swarmID)
@@ -30,11 +33,13 @@ object MGPSO {
       x
     }
 
-  private def pbest(particle: MGParticle) = MGStep.stepPure[Double, Position] {
-    particle.pb
-  }
+  private def pbest(particle: MGParticle): StepS[Double, MGArchive, Position] =
+    MGStep.stepPure[Double, Position] {
+      particle.pb
+    }
 
-  private def updatePBest(envX: Benchmark)(particle: MGParticle) =
+  private def updatePBest(envX: Benchmark)(
+      particle: MGParticle): StepS[Double, MGArchive, MGParticle] =
     MGStep.stepPure[Double, MGParticle] {
       if (envX.compare(particle.pos.fitness, particle.pb.fitness)) {
         particle.updatePB
@@ -79,6 +84,7 @@ object MGPSO {
                   val archiveGuide: MGParticle = CrowdingDistance.leastCrowded(tournament)
 
                   for {
+                    // calcVelocity generates random ctrl params satisfying the MGPSO stability criteria.
                     wc123 <- particle.lambda.value.map(list => satisfyStabilityCriteria(list.head))
                     weights <- wc123
                     (w, c1, c2, c3) = weights
@@ -107,6 +113,7 @@ object MGPSO {
                     .kneePoint(archiveList, R)
                     .getOrElse(CrowdingDistance.leastCrowded(archiveList.toList.take(2)))
                   for {
+                    // calcVelocity generates random ctrl params satisfying the MGPSO stability criteria.
                     wc123 <- particle.lambda.value.map(list => satisfyStabilityCriteria(list.head))
                     weights <- wc123
                     (w, c1, c2, c3) = weights
@@ -157,61 +164,81 @@ object MGPSO {
     result.map(_.map(_._2))
   }
 
-  private def updateVelocity(particle: MGParticle, v: Position) =
+  private def updateVelocity(particle: MGParticle,
+                             v: Position): StepS[Double, MGArchive, MGParticle] =
     MGStep.stepPure[Double, MGParticle] {
       particle.updateVelocity(v)
     }
 
-  private def updateLambda(particle: MGParticle) = MGStep.stepPure[Double, MGParticle] {
-    particle.updateLambda
-  }
+  private def updateLambda(particle: MGParticle): StepS[Double, MGArchive, MGParticle] =
+    MGStep.stepPure[Double, MGParticle] {
+      particle.updateLambda
+    }
 
-  private def stdPosition(particle: MGParticle, v: Position) = MGStep.stepPure[Double, MGParticle] {
-    particle.updatePos(particle.pos + v)
-  }
+  private def stdPosition(particle: MGParticle, v: Position): StepS[Double, MGArchive, MGParticle] =
+    MGStep.stepPure[Double, MGParticle] {
+      particle.updatePos(particle.pos + v)
+    }
 
-  private def insertIntoArchive(particle: MGParticle) =
+  private def insertIntoArchive(particle: MGParticle): StepS[Double, MGArchive, Unit] =
     MGStep.modifyArchive { archive =>
       archive.insert(particle)
     }
 
+  // how does KnPSO and KnEA cope with calc overhead/recalc ???
+  // adaptive neighbourhood strategy
+  private def calcAndUpdateR(archive: List[MGParticle],
+                             desired_ratio_KPs_2_ND_sols: Double,
+                             r_prevs: R_prevs): NonEmptyList[Double] = {
+    if (archive.size == 0) return NonEmptyList(-1.0) // empty archive means no KP calc - fall back to vanilla PSO velocity eq
+    val fitnessValues: List[List[Double]] = archive.map(x => x.pos.fitness.toList)
+    val numObjectives: Int = fitnessValues.head.size
+
+    // ratio of the neighbourhood size to the range spanned by objective m at iteration t
+    // CONTINUE HERE !!! PER OBJECTIVE FIXES !!!
+    val ratio: Double = r_prevs.get_prev_ratio * math.pow(
+      math.E,
+      -(1 - (r_prevs.get_prev_ratio_KPs_2_ND_sols / desired_ratio_KPs_2_ND_sols)) / numObjectives)
+    // max for each objective
+    val maxes: List[Double] = fitnessValues.transpose.map(_.max)
+    // min for each objective
+    val mins: List[Double] = fitnessValues.transpose.map(_.min)
+    // size of neighbourhood for each objective
+    val R: NonEmptyList[Double] = (maxes, mins).zipped.map(_ - _).map(_ * ratio).toNel.get
+
+    r_prevs.set_prev_ratio(ratio)
+    val numKPs: Int = archive.foldLeft(0)((acc, s) => {
+      if (s == KneePoint
+            .kneePoint(archive.toNel.get, R)
+            .getOrElse(CrowdingDistance.leastCrowded(archive.take(2))))
+        acc + 1
+      else acc
+    })
+    r_prevs.set_prev_ratio_KPs_2_ND_sols(numKPs / archive.size)
+
+    assert(R.size == numObjectives)
+    R
+  }
+
   // desired_ratio_KPs_2_ND_sols => user defined parameter > 0 and < 1; represents the desired ratio of knee points to non-dominated solutions
-  def mgpso_pmgpso_knmgpso(envX: Benchmark, desired_ratio_KPs_2_ND_sols: Double = -1.0)
+  // StepS ???
+  def mgpso_pmgpso_knmgpso(envX: Benchmark,
+                           archive: MGArchive,
+                           r_prevs: R_prevs = new R_prevs,
+                           desired_ratio_KPs_2_ND_sols: Double = -1.0)
     : NonEmptyList[MGParticle] => MGParticle => StepS[Double, MGArchive, MGParticle] =
     collection => {
       if (desired_ratio_KPs_2_ND_sols != -1.0) { // KnMGPSO
-        val fitnessValues: List[List[Double]] = collection.toList.map(x => x.pos.fitness.toList)
-        val numObjectives: Int = fitnessValues.head.size
-        // adaptive neighbourhood strategy
-
-        ////////////////////// FIX HERE !!! ///////////////////////////////////////////////////////
-        // Move to parameters and persist ???
-        // ratio of knee points to non-dominated solutions at iteration t − 1
-        // HOW TO UPDATE THIS ??? ALL KPS AT ITERATION T / ARCHIVE.SIZE ???
-        val prev_ratio_KPs_2_ND_sols: Int = 0
-        // ratio of the neighbourhood size to the range spanned by objective m at iteration t - 1
-        val prev_ratio = 1
-        //////////////////////////////////////////////////////////////////////////////////////////
-
-        // ratio of the neighbourhood size to the range spanned by objective m at iteration t
-        val ratio: Double = prev_ratio * math.pow(
-          math.E,
-          -(1 - (prev_ratio_KPs_2_ND_sols / desired_ratio_KPs_2_ND_sols)) / numObjectives)
-        // max for each objective
-        val maxes: List[Double] = fitnessValues.transpose.map(_.max)
-        // min for each objective
-        val mins: List[Double] = fitnessValues.transpose.map(_.min)
-        // size of neighbourhood for each objective
-        val R: NonEmptyList[Double] = (maxes, mins).zipped.map(_ - _).map(_ * ratio).toNel.get
-
-        assert(R.size == numObjectives)
-
         x: MGParticle =>
           for {
-            _ <- insertIntoArchive(x)
+            _ <- insertIntoArchive(x) // will this reflect in the archive passed to this mgpso_pmgpso_knmgpso function ???
             cog <- pbest(x)
             soc <- gbest(envX)(x, collection)
-            v <- calcVelocity(x, soc, cog, R) // New calcVelocity which generates random ctrl params satisfying the MGPSO stability criteria.
+            v <- calcVelocity(
+              x,
+              soc,
+              cog,
+              calcAndUpdateR(archive.values, desired_ratio_KPs_2_ND_sols, r_prevs)) // does this 'archive.values' reflect the 'insertIntoArchive(x)' ???
             p <- stdPosition(x, v)
             p2 <- multiEval(envX)(p)
             p3 <- updateVelocity(p2, v)
@@ -223,7 +250,7 @@ object MGPSO {
           _ <- insertIntoArchive(x)
           cog <- pbest(x)
           soc <- gbest(envX)(x, collection)
-          v <- calcVelocity(x, soc, cog) // New calcVelocity which generates random ctrl params satisfying the MGPSO stability criteria.
+          v <- calcVelocity(x, soc, cog)
           p <- stdPosition(x, v)
           p2 <- multiEval(envX)(p)
           p3 <- updateVelocity(p2, v)

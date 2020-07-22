@@ -1,21 +1,21 @@
 package cilib.research.simulation
 
 import cilib.research.MGArchive
-import cilib.research.mgpso.MGParticle
+import cilib.research.mgpso.{MGParticle, R_prevs}
 import scalaz.NonEmptyList
 import scalaz.Scalaz._
 
 object ResultsToJson {
 
-  def finalArchive(run: Int, iteration: Int, archive: MGArchive, maxIterations: Int): String =
-    if (iteration == maxIterations) { // save more (or less) data to file. Saving only final iteration here. Use % (modulus) for other iters.
-      "{ \"archive\": [" +
+  def finalArchive(run: Int, iteration: Int, archive: MGArchive, maxIterations: Int, r_prevs: R_prevs): String =
+//    if (iteration == maxIterations) { // save more (or less) data to file. Saving only final iteration here. Use % (modulus) for other iters.
+      "{ \"prev_ratio_KPs_2_ND_sols\": " + r_prevs.get_prev_ratio_KPs_2_ND_sols + ", \"prev_ratio\": " + r_prevs.get_prev_ratio + ", \"archive\": [" +
         archive.values
           .map(x => "[" + x.pos.fitness.toList.mkString(",") + "]")
           .mkString(",") +
         "], \"iteration\": " + iteration +
         ", \"run\": " + run + " }\n"
-    } else ""
+//    } else ""
 
   def particlesJson(particles: NonEmptyList[MGParticle]): String =
     "\"swarm\": [" + particles

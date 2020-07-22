@@ -83,10 +83,7 @@ object KneePoint {
     // isolated solutions considered KPs
     else if (insideIndices(0).size >= 0 && insideIndices(1).size == 0)
       Some(archiveCollection.toList(centres(1)._2))
-    // if either solution = KP, return KP;
-    // if neither or both = KP, return sol with max distance to extremal hyperplane;
-    // if both = KP and same max distance to extremal hyperplane, return one sol randomly;
-    // if neither = KP and same max distance to extremal hyperplane, return least crowded of the two particles.
+
     val N1: List[List[Double]] = centres(0)._1 :: insideIndices(0).map(i => fitnessValues(i))
     val N2: List[List[Double]] = centres(1)._1 :: insideIndices(1).map(i => fitnessValues(i))
 
