@@ -1,7 +1,6 @@
 package cilib.research.simulation
 
 import java.io.File
-
 import cilib.exec.Runner.measureWithInfo
 import cilib.exec.{Progress, Runner}
 import cilib.io.csvSinkAppend
@@ -29,6 +28,7 @@ object Simulation {
             benchmark: Benchmark,
             iterations: Int,
             independentRuns: Int,
+            // desired_ratio_KPs_2_ND_sols => user defined parameter > 0 and < 1; represents the desired ratio of knee points to non-dominated solutions
             desired_ratio_KPs_2_ND_sols: Double = -1.0): IO[Unit] = {
     val measuredSimulations = (1 to independentRuns).map(runCount => {
       val rng = RNG.init(10L + runCount.toLong)
@@ -37,7 +37,7 @@ object Simulation {
         benchmark.controlParameters.swarmSizes
           .foldLeft(0)(_ + _)).right.get // archive limit set equal to total population size by default
       val archive =
-        if (algoName == "MGPSO" || algoName == "KnMGPSO")
+        if (algoName == "MGPSO")
           Archive.bounded[MGParticle](popSize, Dominates(benchmark), CrowdingDistance.mostCrowded)
         else if (algoName == "PMGPSO")
           Archive.boundedPD[MGParticle](popSize,
@@ -45,44 +45,29 @@ object Simulation {
                                         CrowdingDistance.mostCrowded,
                                         List.fill(numObjectives)(0).toNel.get,
                                         (0, 1, 2))
+        else if (algoName == "KnMGPSO")
+          Archive.boundedKP[MGParticle](popSize,
+                                        Dominates(benchmark),
+                                        CrowdingDistance.mostCrowded,
+                                        desired_ratio_KPs_2_ND_sols,
+                                        (1.0, 0.0))
         else
           throw new Exception("The algorithm name should be \"MGPSO\", \"PMGPSO\", or \"KnMGPSO\".")
 
-      if (algoName == "KnMGPSO" && desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1) {
-        val r_prevs = new R_prevs
-        val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
-          Runner.foldStepS(
-            placeholderENV,
-            archive,
-            rng,
-            swarm,
-            Runner.staticAlgorithm(
-              lambdaStrategy.name,
-              Iteration.syncS(MGPSO.mgpso_pmgpso_knmgpso(benchmark, archive, r_prevs, desired_ratio_KPs_2_ND_sols))),
-            benchmark.toStaticProblem,
-            (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
-          )
-        }
-        simulation.take(iterations).pipe(measurement(runCount, iterations, r_prevs))
-      } else {
-        val r_prevs = new R_prevs
-        // if desired_ratio_KPs_2_ND_sols is not equal to -1 at this point it WILL CAUSE KAK because checks are done throughout (MGPSO.scala and KneePoint.scala)
-        // to check if desired_ratio_KPs_2_ND_sols is not equal to -1, in which case it is assumed that we are deailing with the KnMGPSO. Note the best way but heyyyy :)
-        assert(desired_ratio_KPs_2_ND_sols == -1.0)
-        val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
-          Runner.foldStepS(
-            placeholderENV,
-            archive,
-            rng,
-            swarm,
-            Runner.staticAlgorithm(lambdaStrategy.name,
-                                   Iteration.syncS(MGPSO.mgpso_pmgpso_knmgpso(benchmark, archive))),
-            benchmark.toStaticProblem,
-            (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
-          )
-        }
-        simulation.take(iterations).pipe(measurement(runCount, iterations, r_prevs))
+      val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
+        Runner.foldStepS(
+          placeholderENV,
+          archive,
+          rng,
+          swarm,
+          Runner.staticAlgorithm(lambdaStrategy.name,
+                                 Iteration.syncS(MGPSO.mgpso_pmgpso_knmgpso(benchmark))),
+          benchmark.toStaticProblem,
+          (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
+        )
       }
+      simulation.take(iterations).pipe(measurement(runCount, iterations))
+
     })
 
     val stream = merge
@@ -105,9 +90,9 @@ object Simulation {
     } yield ()
   }
 
-  private def measurement(run: Int, maxIterations: Int, r_prevs: R_prevs) =
+  private def measurement(run: Int, maxIterations: Int) =
     measureWithInfo[(MGArchive, NonEmptyList[MGParticle]), Unit, String]((info, collection) =>
-      ResultsToJson.finalArchive(run, info.iteration, collection._1, maxIterations, r_prevs))
+      ResultsToJson.finalArchive(run, info.iteration, collection._1, maxIterations))
 
   private def clearFile(fileName: String): Unit = {
     val fileWriter = new java.io.PrintWriter(new File(fileName))

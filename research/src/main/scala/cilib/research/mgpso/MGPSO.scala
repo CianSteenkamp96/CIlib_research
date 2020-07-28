@@ -52,6 +52,7 @@ object MGPSO {
       p: MGParticle): StepS[Double, MGArchive, MGParticle] =
     if (p.pos.isInbounds) updatePBest(envX)(p) else MGStep.stepPure[Double, MGParticle](p)
 
+  // HERE ???
   private def calcVelocity(
       particle: MGParticle,
       social: Position,
@@ -185,78 +186,19 @@ object MGPSO {
       archive.insert(particle)
     }
 
-  // how does KnPSO and KnEA cope with calc overhead/recalc ???
-  // adaptive neighbourhood strategy
-  private def calcAndUpdateR(archive: List[MGParticle],
-                             desired_ratio_KPs_2_ND_sols: Double,
-                             r_prevs: R_prevs): NonEmptyList[Double] = {
-    if (archive.size == 0) return NonEmptyList(-1.0) // empty archive means no KP calc - fall back to vanilla PSO velocity eq
-    val fitnessValues: List[List[Double]] = archive.map(x => x.pos.fitness.toList)
-    val numObjectives: Int = fitnessValues.head.size
-
-    // ratio of the neighbourhood size to the range spanned by objective m at iteration t
-    // CONTINUE HERE !!! PER OBJECTIVE FIXES !!!
-    val ratio: Double = r_prevs.get_prev_ratio * math.pow(
-      math.E,
-      -(1 - (r_prevs.get_prev_ratio_KPs_2_ND_sols / desired_ratio_KPs_2_ND_sols)) / numObjectives)
-    // max for each objective
-    val maxes: List[Double] = fitnessValues.transpose.map(_.max)
-    // min for each objective
-    val mins: List[Double] = fitnessValues.transpose.map(_.min)
-    // size of neighbourhood for each objective
-    val R: NonEmptyList[Double] = (maxes, mins).zipped.map(_ - _).map(_ * ratio).toNel.get
-
-    r_prevs.set_prev_ratio(ratio)
-    val numKPs: Int = archive.foldLeft(0)((acc, s) => {
-      if (s == KneePoint
-            .kneePoint(archive.toNel.get, R)
-            .getOrElse(CrowdingDistance.leastCrowded(archive.take(2))))
-        acc + 1
-      else acc
-    })
-    r_prevs.set_prev_ratio_KPs_2_ND_sols(numKPs / archive.size)
-
-    assert(R.size == numObjectives)
-    R
-  }
-
-  // desired_ratio_KPs_2_ND_sols => user defined parameter > 0 and < 1; represents the desired ratio of knee points to non-dominated solutions
-  // StepS ???
-  def mgpso_pmgpso_knmgpso(envX: Benchmark,
-                           archive: MGArchive,
-                           r_prevs: R_prevs = new R_prevs,
-                           desired_ratio_KPs_2_ND_sols: Double = -1.0)
+  def mgpso_pmgpso_knmgpso(envX: Benchmark)
     : NonEmptyList[MGParticle] => MGParticle => StepS[Double, MGArchive, MGParticle] =
-    collection => {
-      if (desired_ratio_KPs_2_ND_sols != -1.0) { // KnMGPSO
-        x: MGParticle =>
-          for {
-            _ <- insertIntoArchive(x) // will this reflect in the archive passed to this mgpso_pmgpso_knmgpso function ???
-            cog <- pbest(x)
-            soc <- gbest(envX)(x, collection)
-            v <- calcVelocity(
-              x,
-              soc,
-              cog,
-              calcAndUpdateR(archive.values, desired_ratio_KPs_2_ND_sols, r_prevs)) // does this 'archive.values' reflect the 'insertIntoArchive(x)' ???
-            p <- stdPosition(x, v)
-            p2 <- multiEval(envX)(p)
-            p3 <- updateVelocity(p2, v)
-            p4 <- updateLambda(p3)
-            updated <- updatePBestBounds(envX)(p4)
-          } yield updated
-      } else { x => // MGPSO or PMGPSO
-        for {
-          _ <- insertIntoArchive(x)
-          cog <- pbest(x)
-          soc <- gbest(envX)(x, collection)
-          v <- calcVelocity(x, soc, cog)
-          p <- stdPosition(x, v)
-          p2 <- multiEval(envX)(p)
-          p3 <- updateVelocity(p2, v)
-          p4 <- updateLambda(p3)
-          updated <- updatePBestBounds(envX)(p4)
-        } yield updated
-      }
+    collection => { x: MGParticle =>
+      for {
+        _ <- insertIntoArchive(x)
+        cog <- pbest(x)
+        soc <- gbest(envX)(x, collection)
+        v <- calcVelocity(x, soc, cog) // HERE ???
+        p <- stdPosition(x, v)
+        p2 <- multiEval(envX)(p)
+        p3 <- updateVelocity(p2, v)
+        p4 <- updateLambda(p3)
+        updated <- updatePBestBounds(envX)(p4)
+      } yield updated
     }
 }
