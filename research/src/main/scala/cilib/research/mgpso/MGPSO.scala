@@ -52,12 +52,9 @@ object MGPSO {
       p: MGParticle): StepS[Double, MGArchive, MGParticle] =
     if (p.pos.isInbounds) updatePBest(envX)(p) else MGStep.stepPure[Double, MGParticle](p)
 
-  // HERE ???
-  private def calcVelocity(
-      particle: MGParticle,
-      social: Position,
-      cognitive: Position,
-      R: NonEmptyList[Double] = NonEmptyList[Double](-1)): StepS[Double, MGArchive, Position] =
+  private def calcVelocity(particle: MGParticle,
+                           social: Position,
+                           cognitive: Position): StepS[Double, MGArchive, Position] =
     MGStep.withArchive[Double, Position](
       archive => { // See Gitter chat with Kyle Erwin explaining this code block ...
         if (archive.isEmpty) {
@@ -76,7 +73,7 @@ object MGPSO {
         } else {
           // NOTE !!! FOR KNMGPSO THE ARCHIVE AND ARCHIVE MANAGEMENT IS THE SAME BUT THE ARCHIVE GUIDE IS CHOSEN DIFFERENTLY!!!
           // if MGPSO or PMGPSO
-          if (R.head == -1 && R.size == 1) {
+          if (archive.get_R.head == -1.0 && archive.get_R.size == 1) {
             Step.liftR(
               RVar
                 .shuffle(archive.values.toNel.get)
@@ -111,7 +108,7 @@ object MGPSO {
                   // if neither = KP and same max distance to extremal hyperplane, return least crowded of the two particles.
                   // Note that due to the way that '.take' works and the fact that we 'shuffle' the archive before this is executed in MGPSO.scala, therefore, choosing 2 'new' sols for the crowding distance tournament will actually use the same tournament participants as taken here.
                   val archiveGuide: MGParticle = KneePoint
-                    .kneePoint(archiveList, R)
+                    .kneePoint(archiveList, archive.get_R)
                     .getOrElse(CrowdingDistance.leastCrowded(archiveList.toList.take(2)))
                   for {
                     // calcVelocity generates random ctrl params satisfying the MGPSO stability criteria.
@@ -152,8 +149,8 @@ object MGPSO {
           // MGPSO convergence/stability criteria
           if (((c1 + (lambda * c2) + ((1 - lambda) * c3)) > 0) &&
               ((c1 + (lambda * c2) + ((1 - lambda) * c3)) < ((4 * (1 - Math.pow(w, 2))) / (1 - w + ((Math
-                .pow(c1, 2) + (Math.pow(lambda, 2) * Math.pow(c2, 2)) + ((Math.pow((1 - lambda), 2) * Math
-                .pow(c3, 2)) * (1 + w))) / (3 * Math.pow((c1 + (lambda * c2) + ((1 - lambda) * c3)),
+                .pow(c1, 2) + (Math.pow(lambda, 2) * Math.pow(c2, 2)) + ((Math.pow(1 - lambda, 2) * Math
+                .pow(c3, 2)) * (1 + w))) / (3 * Math.pow(c1 + (lambda * c2) + ((1 - lambda) * c3),
                                                          2)))))))
             RVar.pure(Some((counter, (w, c1, c2, c3))))
           else if (counter > 10) RVar.pure(None)
@@ -193,7 +190,7 @@ object MGPSO {
         _ <- insertIntoArchive(x)
         cog <- pbest(x)
         soc <- gbest(envX)(x, collection)
-        v <- calcVelocity(x, soc, cog) // HERE ???
+        v <- calcVelocity(x, soc, cog)
         p <- stdPosition(x, v)
         p2 <- multiEval(envX)(p)
         p3 <- updateVelocity(p2, v)
