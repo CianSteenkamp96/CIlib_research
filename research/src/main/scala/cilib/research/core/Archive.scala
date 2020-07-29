@@ -56,7 +56,7 @@ sealed abstract class Archive[A] {
             if (l.size < limit.value && l.forall(x => !c(x, v))) {
               removeDominatedAndInsert(v)
             } else if (l.size == limit.value && l.forall(x => !c(x, v))) {
-              val selected = deletePolicy(l) // HERE KYLE ???
+              val selected = deletePolicy(l) // intellij complains here but I don't think it is an error ...
               NonEmpty[A](l.filterNot(x => x.equals(selected)), b, c).removeDominatedAndInsert(v)
             } else
               NonEmpty[A](l, b, c)
@@ -78,7 +78,7 @@ sealed abstract class Archive[A] {
                             updated_freqs_and_indices._2)
             } else if (l.size == limit.value && l.forall(x =>
                          !c(x, v, updated_freqs_and_indices._2))) {
-              val selected = deletePolicy(l) // HERE KYLE ???
+              val selected = deletePolicy(l) // intellij complains here but I don't think it is an error ...
               NonEmptyPD[A](v :: l.filterNot(x => x.equals(selected)),
                             b,
                             c,
@@ -103,7 +103,7 @@ sealed abstract class Archive[A] {
             if (l.size < limit.value && l.forall(x => !c(x, v)))
               removeDominatedAndInsert(v).update_KP_neighbourhoods
             else if (l.size == limit.value && l.forall(x => !c(x, v))) {
-              val selected = deletePolicy(l) // HERE KYLE ???
+              val selected = deletePolicy(l) // intellij complains here but I don't think it is an error ...
               NonEmptyKP[A](l.filterNot(x => x.equals(selected)), b, c, dr, pr_prKPs2ND, _R)
                 .removeDominatedAndInsert(v)
                 .update_KP_neighbourhoods
@@ -178,13 +178,8 @@ sealed abstract class Archive[A] {
         EmptyKP[A](b, c, dr, (1.0, 0.0), _R) // starting values according to lit
       case NonEmptyKP(l, b, c, dr, pr_prKPs2ND, _) =>
         // empty archive means no KP calc - fall back to vanilla PSO velocity eq
-        val fitnessValues: List[List[Double]] = l.map(x =>
-          x match {
-            case x.getClass == MGParticle =>
-              x.pos.fitness.toList // thought 'pattern matching' would ensure x.pos to be visible/available ???
-        }) // HERE KYLE ???
+        val fitnessValues: List[List[Double]] = l.map(x => x.pos.fitness.toList) // HERE KYLE ???
         val numObjectives: Int = fitnessValues.head.size
-
         // ratio of the neighbourhood size to the range spanned by objective m at iteration t
         val ratio: Double = pr_prKPs2ND._1 * math.pow(math.E,
                                                       -(1 - (pr_prKPs2ND._2 / dr)) / numObjectives)
@@ -230,7 +225,8 @@ sealed abstract class Archive[A] {
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY KnMGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   def get_R: NonEmptyList[Double] =
     this match {
-      case Empty(_, _) | EmptyPD(_, _, _, _) | NonEmpty(_, _, _) | NonEmptyPD(_, _, _, _, _) => NonEmptyList(-1.0)
+      case Empty(_, _) | EmptyPD(_, _, _, _) | NonEmpty(_, _, _) | NonEmptyPD(_, _, _, _, _) =>
+        NonEmptyList(-1.0)
       case EmptyKP(_, _, _, _, _R)       => _R
       case NonEmptyKP(_, _, _, _, _, _R) => _R
     }
