@@ -29,7 +29,7 @@ object CrowdingDistance {
     } // A list of lists. Each inner list are the crowding distances
 
     val f = getOptFunction(opt)
-    val zeroed = (for (_ <- 0 until fitnessValues.size) yield 0.0).toList
+    val zeroed = (for (_ <- fitnessValues.indices) yield 0.0).toList
 
     val index =
       result.flatten // List[List[(crowding distance, entity index]] => List[(crowding distance, entity index]
@@ -52,6 +52,6 @@ object CrowdingDistance {
           x < y
     }
 
-  def leastCrowded(collection: List[MGParticle]) = apply(collection, Max)
-  def mostCrowded(collection: List[MGParticle]) = apply(collection, Min)
+  def leastCrowded(collection: List[MGParticle]): MGParticle = apply(collection, Max)
+  def mostCrowded(collection: List[MGParticle]): MGParticle = apply(collection, Min)
 }

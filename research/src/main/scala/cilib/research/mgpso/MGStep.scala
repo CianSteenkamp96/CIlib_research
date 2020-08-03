@@ -6,17 +6,17 @@ import scalaz.StateT
 
 object MGStep {
 
-  def apply[A, B](step: Step[A, B]) =
+  def apply[A, B](step: Step[A, B]): StepS[A, MGArchive, B] =
     lift[A, B](archive => step.map(x => (archive, x)))
 
-  def stepPure[A, B](b: B) =
+  def stepPure[A, B](b: B): StepS[A, MGArchive, B] =
     apply[A, B](Step.pure[A, B](b))
 
   // See Gitter chat with Kyle Erwin explaining this code
-  def withArchive[A, B](f: MGArchive => Step[A, B]) =
+  def withArchive[A, B](f: MGArchive => Step[A, B]): StepS[A, MGArchive, B] =
     lift[A, B](archive => f(archive).map(x => (archive, x)))
 
-  def modifyArchive(f: MGArchive => MGArchive) =
+  def modifyArchive(f: MGArchive => MGArchive): StepS[Double, MGArchive, Unit] =
     lift[Double, Unit](
       archive =>
         Step

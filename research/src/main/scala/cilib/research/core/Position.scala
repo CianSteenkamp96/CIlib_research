@@ -15,7 +15,7 @@ case class Position(pos: NonEmptyList[Double],
   def traverse[G[_]: Applicative](f: Double => G[Double]): G[Position] =
     pos.traverse(f).map(l => this.copy(pos = l))
 
-  def updateFitness(x: NonEmptyList[Double]) =
+  def updateFitness(x: NonEmptyList[Double]): Position =
     this.copy(fitness = x)
 
   def zeroed: Position =

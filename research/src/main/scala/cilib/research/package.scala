@@ -9,7 +9,7 @@ package object research {
 
   type MGArchive = Archive[MGParticle]
 
-  val placeholderENV = Environment(
+  val placeholderENV: Environment[Double] = Environment(
     cmp = Comparison.dominance(Min),
     eval = Eval.unconstrained(cilib.benchmarks.Benchmarks.spherical[NonEmptyList, Double])
   )

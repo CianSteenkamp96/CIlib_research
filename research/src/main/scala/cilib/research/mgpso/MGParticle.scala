@@ -11,19 +11,19 @@ case class MGParticle(id: Int,
                       velocity: Position,
                       swarmID: Int,
                       lambda: LambdaStrategy) {
-  def updatePB =
+  def updatePB: MGParticle =
     this.copy(pb = this.pos)
 
-  def updatePos(x: Position) =
+  def updatePos(x: Position): MGParticle =
     this.copy(pos = x)
 
-  def updateVelocity(x: Position) =
+  def updateVelocity(x: Position): MGParticle =
     this.copy(velocity = x)
 
-  def updateLambda =
+  def updateLambda: MGParticle =
     this.copy(lambda = this.lambda.update)
 
-  def updateFitness(x: NonEmptyList[Double]) =
+  def updateFitness(x: NonEmptyList[Double]): MGParticle =
     this.copy(pos = pos.updateFitness(x))
 }
 

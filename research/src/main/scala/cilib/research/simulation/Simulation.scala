@@ -47,13 +47,17 @@ object Simulation {
                                         (0, 1, 2))
         else if (algoName == "KnMGPSO") {
           assert(desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1)
-          Archive.boundedKP[MGParticle](popSize,
-                                        Dominates(benchmark),
-                                        CrowdingDistance.mostCrowded,
-                                        desired_ratio_KPs_2_ND_sols,
-                                        (1.0, 0.0),
-                                        // this initial NEL does not matter
-                                        NonEmptyList(1.0, 1.0, 1.0))
+          def getFitness(l: List[MGParticle]): List[List[Double]] = l.map(x => x.pos.fitness.toList)
+          Archive.boundedKP[MGParticle](
+            popSize,
+            Dominates(benchmark),
+            CrowdingDistance.mostCrowded,
+            desired_ratio_KPs_2_ND_sols,
+            (1.0, 0.0),
+            // this initial NEL does not matter
+            NonEmptyList(1.0, 1.0, 1.0),
+            getFitness
+          )
         } else
           throw new Exception("The algorithm name should be \"MGPSO\", \"PMGPSO\", or \"KnMGPSO\".")
 
