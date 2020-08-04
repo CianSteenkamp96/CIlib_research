@@ -3,7 +3,7 @@
 package cilib.research.core
 
 import cilib.research.core.GetIndices.{fitnessFromFreq, get3Indices, probFromFitness}
-import cilib.research.mgpso.{CrowdingDistance, KneePoint}
+import cilib.research.mgpso.{CrowdingDistance, KneePoint, MGParticle}
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.numeric.Positive
 import scalaz.Scalaz._
@@ -26,20 +26,20 @@ sealed abstract class Archive[A] {
 
   def values: List[A] =
     this match {
-      case Empty(_, _) | EmptyPD(_, _, _, _) | EmptyKP(_, _, _, _, _, _) => List()
-      case NonEmpty(l, _, _)                                             => l
-      case NonEmptyPD(l, _, _, _, _)                                     => l
-      case NonEmptyKP(l, _, _, _, _, _, _)                               => l
+      case Empty(_, _) | EmptyPD(_, _, _, _) | EmptyKP(_, _, _, _, _, _, _, _) => List()
+      case NonEmpty(l, _, _)                                                   => l
+      case NonEmptyPD(l, _, _, _, _)                                           => l
+      case NonEmptyKP(l, _, _, _, _, _, _, _, _)                               => l
     }
 
   def bound: ArchiveBound =
     this match {
-      case Empty(b, _)                     => b
-      case EmptyPD(b, _, _, _)             => b
-      case EmptyKP(b, _, _, _, _, _)       => b
-      case NonEmpty(_, b, _)               => b
-      case NonEmptyPD(_, b, _, _, _)       => b
-      case NonEmptyKP(_, b, _, _, _, _, _) => b
+      case Empty(b, _)                           => b
+      case EmptyPD(b, _, _, _)                   => b
+      case EmptyKP(b, _, _, _, _, _, _, _)       => b
+      case NonEmpty(_, b, _)                     => b
+      case NonEmptyPD(_, b, _, _, _)             => b
+      case NonEmptyKP(_, b, _, _, _, _, _, _, _) => b
     }
 
   def insert(v: A): Archive[A] =
@@ -47,8 +47,8 @@ sealed abstract class Archive[A] {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
       case EmptyPD(b, insertPolicy, freqs, i123) =>
         NonEmptyPD(List(v), b, insertPolicy, freqs, i123)
-      case EmptyKP(b, insertPolicy, dr, pr_prKPs2ND, _R, fl) =>
-        NonEmptyKP(List(v), b, insertPolicy, dr, pr_prKPs2ND, _R, fl)
+      case EmptyKP(b, insertPolicy, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2) =>
+        NonEmptyKP(List(v), b, insertPolicy, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2)
       case NonEmpty(l, b, c) =>
         b match {
           case Bounded(limit, deletePolicy) =>
@@ -100,7 +100,7 @@ sealed abstract class Archive[A] {
             } else
               NonEmptyPD[A](l, b, c, freqs, curr_indices) // Note: freqs and indices updated only if insert successful
         }
-      case NonEmptyKP(l, b, c, dr, pr_prKPs2ND, _R, fl) =>
+      case NonEmptyKP(l, b, c, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2) =>
         b match {
           case Bounded(limit, deletePolicy) =>
             // l.forall(x => !c(x, v)) means that there is no element in the list that dominates v
@@ -108,16 +108,24 @@ sealed abstract class Archive[A] {
               removeDominatedAndInsert(v).update_KP_neighbourhoods
             else if (l.size == limit.value && l.forall(x => !c(x, v))) {
               val selected = deletePolicy(l) // intellij complains here but I don't think it is an error ...
-              NonEmptyKP[A](l.filterNot(x => x.equals(selected)), b, c, dr, pr_prKPs2ND, _R, fl)
+              NonEmptyKP[A](l.filterNot(x => x.equals(selected)),
+                            b,
+                            c,
+                            dr,
+                            pr_prKPs2ND,
+                            _R,
+                            fl,
+                            lToNel,
+                            lTake2)
                 .removeDominatedAndInsert(v)
                 .update_KP_neighbourhoods
             } else
-              NonEmptyKP[A](l, b, c, dr, pr_prKPs2ND, _R, fl)
+              NonEmptyKP[A](l, b, c, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2)
           case Unbounded() =>
             if (l.forall(x => !c(x, v)))
               removeDominatedAndInsert(v).update_KP_neighbourhoods
             else
-              NonEmptyKP[A](l, b, c, dr, pr_prKPs2ND, _R, fl)
+              NonEmptyKP[A](l, b, c, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2)
         }
     }
 
@@ -132,8 +140,8 @@ sealed abstract class Archive[A] {
             el._1 + 1
           else el._1)
         (newFreqs, randomIndices)
-      case Empty(_, _) | NonEmpty(_, _, _) | EmptyKP(_, _, _, _, _, _) |
-          NonEmptyKP(_, _, _, _, _, _, _) =>
+      case Empty(_, _) | NonEmpty(_, _, _) | EmptyKP(_, _, _, _, _, _, _, _) |
+          NonEmptyKP(_, _, _, _, _, _, _, _, _) =>
         throw new Exception("update_freqs_and_indices only used by PMGPSO.")
     }
 
@@ -141,16 +149,24 @@ sealed abstract class Archive[A] {
   protected def removeDominatedAndInsert(v: A): Archive[A] =
     this match {
       case Empty(b, c) => NonEmpty[A](List(v), b, c)
-      case EmptyKP(b, c, dr, pr_prKPs2ND, _R, fl) =>
-        NonEmptyKP[A](List(v), b, c, dr, pr_prKPs2ND, _R, fl)
+      case EmptyKP(b, c, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2) =>
+        NonEmptyKP[A](List(v), b, c, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2)
       case NonEmpty(l, b, c) =>
         val dominated =
           l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
         NonEmpty[A](v :: l.filterNot(dominated.contains), b, c)
-      case NonEmptyKP(l, b, c, dr, pr_prKPs2ND, _R, fl) =>
+      case NonEmptyKP(l, b, c, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2) =>
         val dominated =
           l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
-        NonEmptyKP[A](v :: l.filterNot(dominated.contains), b, c, dr, pr_prKPs2ND, _R, fl)
+        NonEmptyKP[A](v :: l.filterNot(dominated.contains),
+                      b,
+                      c,
+                      dr,
+                      pr_prKPs2ND,
+                      _R,
+                      fl,
+                      lToNel,
+                      lTake2)
       case EmptyPD(_, _, _, _) | NonEmptyPD(_, _, _, _, _) =>
         throw new Exception("removeDominatedAndInsert - Irrelevant for PMGPSO.")
     }
@@ -158,12 +174,12 @@ sealed abstract class Archive[A] {
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NOT USED BY PMGPSO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   def removeDominated(v: A, l: List[A]): List[A] =
     this match {
-      case Empty(_, _) | EmptyKP(_, _, _, _, _, _) => List[A]()
+      case Empty(_, _) | EmptyKP(_, _, _, _, _, _, _, _) => List[A]()
       case NonEmpty(_, _, c) =>
         val dominated =
           l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
         l.filterNot(dominated.contains)
-      case NonEmptyKP(_, _, c, _, _, _, _) =>
+      case NonEmptyKP(_, _, c, _, _, _, _, _, _) =>
         val dominated =
           l.foldLeft(List[A]())((acc, current) => if (c(v, current)) current :: acc else acc)
         l.filterNot(dominated.contains)
@@ -179,10 +195,9 @@ sealed abstract class Archive[A] {
       case Empty(_, _) | NonEmpty(_, _, _) | EmptyPD(_, _, _, _) | NonEmptyPD(_, _, _, _, _) =>
         throw new Exception("update_KP_neighbourhoods - Only relevant for KnMGPSO.")
       // this should never be the case below
-      case EmptyKP(b, c, dr, _, _R, fl) =>
-        EmptyKP[A](b, c, dr, (1.0, 0.0), _R, fl) // starting values according to lit
-      case NonEmptyKP(l, b, c, dr, pr_prKPs2ND, _, fl) =>
-        // empty archive means no KP calc - fall back to vanilla PSO velocity eq
+      case EmptyKP(b, c, dr, _, _R, fl, lToNel, lTake2) =>
+        EmptyKP[A](b, c, dr, (1.0, 0.0), _R, fl, lToNel, lTake2) // starting values according to lit
+      case NonEmptyKP(l, b, c, dr, pr_prKPs2ND, _, fl, lToNel, lTake2) =>
         val fitnessValues: List[List[Double]] = fl(l)
         val numObjectives: Int = fitnessValues.head.size
         // ratio of the neighbourhood size to the range spanned by objective m at iteration t
@@ -198,15 +213,15 @@ sealed abstract class Archive[A] {
 
         val numKPs: Int = l.foldLeft(0)((acc, s) => {
           if (s == KneePoint
-                .kneePoint(l.toNel.get, new__R) // HERE KYLE ???
-                .getOrElse(CrowdingDistance.leastCrowded(l.take(2)))) // HERE KYLE ???
+                .kneePoint(lToNel(l), new__R)
+                .getOrElse(CrowdingDistance.leastCrowded(lTake2(l))))
             acc + 1
           else acc
         })
 
         val new_pr_prKPs2ND = (ratio, (numKPs / l.size) * 1.0)
 
-        NonEmptyKP[A](l, b, c, dr, new_pr_prKPs2ND, new__R, fl)
+        NonEmptyKP[A](l, b, c, dr, new_pr_prKPs2ND, new__R, fl, lToNel, lTake2)
     }
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY KnMGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -214,8 +229,8 @@ sealed abstract class Archive[A] {
     this match {
       case Empty(_, _) | EmptyPD(_, _, _, _) | NonEmpty(_, _, _) | NonEmptyPD(_, _, _, _, _) =>
         throw new Exception("get_pr_prKPs2ND - Only relevant for KnMGPSO.")
-      case EmptyKP(_, _, _, pr_prKPs2ND, _, _)       => pr_prKPs2ND
-      case NonEmptyKP(_, _, _, _, pr_prKPs2ND, _, _) => pr_prKPs2ND
+      case EmptyKP(_, _, _, pr_prKPs2ND, _, _, _, _)       => pr_prKPs2ND
+      case NonEmptyKP(_, _, _, _, pr_prKPs2ND, _, _, _, _) => pr_prKPs2ND
     }
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY KnMGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -223,8 +238,8 @@ sealed abstract class Archive[A] {
     this match {
       case Empty(_, _) | EmptyPD(_, _, _, _) | NonEmpty(_, _, _) | NonEmptyPD(_, _, _, _, _) =>
         throw new Exception("get_dr - Only relevant for KnMGPSO.")
-      case EmptyKP(_, _, dr, _, _, _)       => dr
-      case NonEmptyKP(_, _, _, dr, _, _, _) => dr
+      case EmptyKP(_, _, dr, _, _, _, _, _)       => dr
+      case NonEmptyKP(_, _, _, dr, _, _, _, _, _) => dr
     }
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! USED BY KnMGPSO ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -232,31 +247,32 @@ sealed abstract class Archive[A] {
     this match {
       case Empty(_, _) | EmptyPD(_, _, _, _) | NonEmpty(_, _, _) | NonEmptyPD(_, _, _, _, _) =>
         NonEmptyList(-1.0)
-      case EmptyKP(_, _, _, _, _R, _)       => _R
-      case NonEmptyKP(_, _, _, _, _, _R, _) => _R
+      case EmptyKP(_, _, _, _, _R, _, _, _)       => _R
+      case NonEmptyKP(_, _, _, _, _, _R, _, _, _) => _R
     }
 
   def empty: Archive[A] =
     this match {
-      case Empty(_, _) | EmptyPD(_, _, _, _) | EmptyKP(_, _, _, _, _, _) => this
-      case NonEmpty(_, b, c)                                             => Empty(b, c)
-      case NonEmptyPD(_, b, insertPolicy, freqs, i123)                   => EmptyPD(b, insertPolicy, freqs, i123)
-      case NonEmptyKP(_, b, insertPolicy, dr, pr_prKPs2ND, _R, fl) =>
-        EmptyKP(b, insertPolicy, dr, pr_prKPs2ND, _R, fl)
+      case Empty(_, _) | EmptyPD(_, _, _, _) | EmptyKP(_, _, _, _, _, _, _, _) => this
+      case NonEmpty(_, b, c)                                                   => Empty(b, c)
+      case NonEmptyPD(_, b, insertPolicy, freqs, i123)                         => EmptyPD(b, insertPolicy, freqs, i123)
+      case NonEmptyKP(_, b, insertPolicy, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2) =>
+        EmptyKP(b, insertPolicy, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2)
     }
 
   def isEmpty: Boolean =
     this match {
-      case Empty(_, _) | EmptyPD(_, _, _, _) | EmptyKP(_, _, _, _, _, _)                   => true
-      case NonEmpty(_, _, _) | NonEmptyPD(_, _, _, _, _) | NonEmptyKP(_, _, _, _, _, _, _) => false
+      case Empty(_, _) | EmptyPD(_, _, _, _) | EmptyKP(_, _, _, _, _, _, _, _) => true
+      case NonEmpty(_, _, _) | NonEmptyPD(_, _, _, _, _) | NonEmptyKP(_, _, _, _, _, _, _, _, _) =>
+        false
     }
 
   def size: Int =
     this match {
-      case Empty(_, _) | EmptyPD(_, _, _, _) | EmptyKP(_, _, _, _, _, _) => 0
-      case NonEmpty(l, _, _)                                             => l.size
-      case NonEmptyPD(l, _, _, _, _)                                     => l.size
-      case NonEmptyKP(l, _, _, _, _, _, _)                               => l.size
+      case Empty(_, _) | EmptyPD(_, _, _, _) | EmptyKP(_, _, _, _, _, _, _, _) => 0
+      case NonEmpty(l, _, _)                                                   => l.size
+      case NonEmptyPD(l, _, _, _, _)                                           => l.size
+      case NonEmptyKP(l, _, _, _, _, _, _, _, _)                               => l.size
     }
 }
 
@@ -345,7 +361,9 @@ object Archive {
                                       pr_prKPs2ND: (Double, Double),
                                       // neighbourhood size per objective
                                       _R: NonEmptyList[Double],
-                                      fl: List[A] => List[List[Double]])
+                                      fl: List[A] => List[List[Double]],
+                                      lToNel: List[A] => NonEmptyList[MGParticle],
+                                      lTake2: List[A] => List[MGParticle])
       extends Archive[A]
 
   // NonEmpty Archive using Knee Points for archive guide selection
@@ -358,7 +376,9 @@ object Archive {
                                          pr_prKPs2ND: (Double, Double),
                                          // neighbourhood size per objective
                                          _R: NonEmptyList[Double],
-                                         fl: List[A] => List[List[Double]])
+                                         fl: List[A] => List[List[Double]],
+                                         lToNel: List[A] => NonEmptyList[MGParticle],
+                                         lTake2: List[A] => List[MGParticle])
       extends Archive[A]
 
   def boundedKP[A](limit: Int Refined Positive,
@@ -368,16 +388,20 @@ object Archive {
                    pr_prKPs2ND: (Double, Double),
                    // neighbourhood size per objective
                    _R: NonEmptyList[Double],
-                   fl: List[A] => List[List[Double]]): Archive[A] =
-    EmptyKP[A](Bounded(limit, deletePolicy), insertPolicy, dr, pr_prKPs2ND, _R, fl)
+                   fl: List[A] => List[List[Double]],
+                   lToNel: List[A] => NonEmptyList[MGParticle],
+                   lTake2: List[A] => List[MGParticle]): Archive[A] =
+    EmptyKP[A](Bounded(limit, deletePolicy), insertPolicy, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2)
 
   def unboundedKP[A](insertPolicy: (A, A) => Boolean,
                      dr: Double,
                      pr_prKPs2ND: (Double, Double),
                      // neighbourhood size per objective
                      _R: NonEmptyList[Double],
-                     fl: List[A] => List[List[Double]]): Archive[A] =
-    EmptyKP[A](Unbounded(), insertPolicy, dr, pr_prKPs2ND, _R, fl)
+                     fl: List[A] => List[List[Double]],
+                     lToNel: List[A] => NonEmptyList[MGParticle],
+                     lTake2: List[A] => List[MGParticle]): Archive[A] =
+    EmptyKP[A](Unbounded(), insertPolicy, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2)
 
   def boundedNonEmptyKP[A](seeds: NonEmptyList[A],
                            limit: Int Refined Positive,
@@ -387,9 +411,11 @@ object Archive {
                            pr_prKPs2ND: (Double, Double),
                            // neighbourhood size per objective
                            _R: NonEmptyList[Double],
-                           fl: List[A] => List[List[Double]]): Archive[A] = {
+                           fl: List[A] => List[List[Double]],
+                           lToNel: List[A] => NonEmptyList[MGParticle],
+                           lTake2: List[A] => List[MGParticle]): Archive[A] = {
     val emptyArchive: Archive[A] =
-      boundedKP(limit, insertPolicy, deletePolicy, dr, pr_prKPs2ND, _R, fl)
+      boundedKP(limit, insertPolicy, deletePolicy, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2)
     seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
   }
 
@@ -399,8 +425,11 @@ object Archive {
                              pr_prKPs2ND: (Double, Double),
                              // neighbourhood size per objective
                              _R: NonEmptyList[Double],
-                             fl: List[A] => List[List[Double]]): Archive[A] = {
-    val emptyArchive: Archive[A] = unboundedKP(insertPolicy, dr, pr_prKPs2ND, _R, fl)
+                             fl: List[A] => List[List[Double]],
+                             lToNel: List[A] => NonEmptyList[MGParticle],
+                             lTake2: List[A] => List[MGParticle]): Archive[A] = {
+    val emptyArchive: Archive[A] =
+      unboundedKP(insertPolicy, dr, pr_prKPs2ND, _R, fl, lToNel, lTake2)
     seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
   }
 }

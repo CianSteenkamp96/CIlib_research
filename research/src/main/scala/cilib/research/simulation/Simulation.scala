@@ -47,7 +47,10 @@ object Simulation {
                                         (0, 1, 2))
         else if (algoName == "KnMGPSO") {
           assert(desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1)
+          // functions to avoid type errors ...
           def getFitness(l: List[MGParticle]): List[List[Double]] = l.map(x => x.pos.fitness.toList)
+          def toMGParticleNel(l: List[MGParticle]): NonEmptyList[MGParticle] = l.toNel.get
+          def take2(l: List[MGParticle]): List[MGParticle] = l.take(2)
           Archive.boundedKP[MGParticle](
             popSize,
             Dominates(benchmark),
@@ -56,7 +59,9 @@ object Simulation {
             (1.0, 0.0),
             // this initial NEL does not matter
             NonEmptyList(1.0, 1.0, 1.0),
-            getFitness
+            getFitness,
+            toMGParticleNel,
+            take2
           )
         } else
           throw new Exception("The algorithm name should be \"MGPSO\", \"PMGPSO\", or \"KnMGPSO\".")
