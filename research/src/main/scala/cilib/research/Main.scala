@@ -11,7 +11,7 @@ import scalaz.effect.{IO, SafeApp}
 // To create jars see readmes/jar_creation on MSc HD
 
 // Intellij -> right click run main -> error -> click on Main (next to green hammer) -> edit configs -> add command line args to 'Program arguments:' -> apply -> run
-// command line args aexample => MGPSO 3 30 WFG
+// command line args example => MGPSO 3 30 WFG
 object Main extends SafeApp {
 
   override def run(args: ImmutableArray[String]): IO[Unit] = {
@@ -20,14 +20,14 @@ object Main extends SafeApp {
     // Throwing exceptions not pure - maybe improve at a later stage
     if (args.length != 4 && args.length != 5)
       throw new Exception(
-        "Number of CL params needs to be at least 4 separated by spaces including: algoName (MGPSO, PMGPSO, or KnMGPSO) numObjs (3, 5, 8, 10, or 15) numDims (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) problemNum (Note this parameter is optional - if left unspecified the entire problem suite will be included. For WFG: 1, 2, ..., or 9; For DTLZ: 1, 2, ..., or 7).\n")
-    else if ((args(0) != "MGPSO" && args(0) != "PMGPSO" && args(0) != "KnMGPSO") ||
+        "Number of CL params needs to be at least 4 separated by spaces including: algoName (MGPSO, PMGPSO, RW-PMGPSO, or KnMGPSO) numObjs (3, 5, 8, 10, or 15) numDims (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) problemNum (Note this parameter is optional - if left unspecified the entire problem suite will be included. For WFG: 1, 2, ..., or 9; For DTLZ: 1, 2, ..., or 7).\n")
+    else if ((args(0) != "MGPSO" && args(0) != "PMGPSO" && args(0) != "RW-PMGPSO"&& args(0) != "KnMGPSO") ||
              (args(1).toInt != 3 && args(1).toInt != 5 && args(1).toInt != 8 && args(1).toInt != 10 && args(
                1).toInt != 15) ||
              (args(2).toInt != 30 && args(2).toInt != 100 && args(2).toInt != 500 && args(2).toInt != 1000) ||
              (args(3) != "WFG" && args(3) != "DTLZ"))
       throw new Exception(
-        "CL params needs to be: algoName (MGPSO, PMGPSO, or KnMGPSO) numObjs (3, 5, 8, 10, or 15) numDims (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) problemNum (Note this parameter is optional - if left unspecified the entire problem suite will be included. For WFG: 1, 2, ..., or 9; For DTLZ: 1, 2, ..., or 7).\n")
+        "CL params needs to be: algoName (MGPSO, PMGPSO, RW-PMGPSO, or KnMGPSO) numObjs (3, 5, 8, 10, or 15) numDims (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) problemNum (Note this parameter is optional - if left unspecified the entire problem suite will be included. For WFG: 1, 2, ..., or 9; For DTLZ: 1, 2, ..., or 7).\n")
 
     if (args.length == 5)
       if (args(3) == "WFG") {
@@ -60,7 +60,7 @@ object Main extends SafeApp {
 //    val desired_ratio_KPs_2_ND_sols: Double = -1.0
     val desired_ratio_KPs_2_ND_sols: Double = 0.25 // !!! NB HERE !!!
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    val algoName: String = args(0) // algorithm name: 'MGPSO', 'PMGPSO', or 'KnMGPSO'
+    val algoName: String = args(0) // algorithm name: 'MGPSO', 'PMGPSO', 'RW-PMGPSO', or 'KnMGPSO'
     assert(if (algoName != "KnMGPSO") desired_ratio_KPs_2_ND_sols == -1.0 else if (algoName == "KnMGPSO") desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1 else 1 == 1)
     val numObj: Int = args(1).toInt // #obj: 3, 5, 8, 10, or 15
     val numDecisionVariables: Int = args(2).toInt

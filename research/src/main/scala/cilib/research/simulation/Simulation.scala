@@ -40,7 +40,9 @@ object Simulation {
         if (algoName == "MGPSO")
           Archive.bounded[MGParticle](popSize, Dominates(benchmark), CrowdingDistance.mostCrowded)
         else if (algoName == "PMGPSO")
-          Archive.boundedPD[MGParticle](popSize,
+          Archive.boundedPD[MGParticle](popSize, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded, numObjectives)
+        else if (algoName == "RW-PMGPSO")
+          Archive.boundedRWPD[MGParticle](popSize,
                                         PartiallyDominates(benchmark),
                                         CrowdingDistance.mostCrowded,
                                         List.fill(numObjectives)(0).toNel.get,
@@ -59,12 +61,13 @@ object Simulation {
             (1.0, 0.0),
             // this initial NEL does not matter
             NonEmptyList(1.0, 1.0, 1.0),
+            // to avoid type errors ...
             getFitness,
             toMGParticleNel,
             take2
           )
         } else
-          throw new Exception("The algorithm name should be \"MGPSO\", \"PMGPSO\", or \"KnMGPSO\".")
+          throw new Exception("The algorithm name should be \"MGPSO\", \"PMGPSO\", \"RW-PMGPSO\", or \"KnMGPSO\".")
 
       val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
         Runner.foldStepS(
@@ -73,7 +76,7 @@ object Simulation {
           rng,
           swarm,
           Runner.staticAlgorithm(lambdaStrategy.name,
-                                 Iteration.syncS(MGPSO.mgpso_pmgpso_knmgpso(benchmark))),
+                                 Iteration.syncS(MGPSO.pso(benchmark))),
           benchmark.toStaticProblem,
           (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
         )

@@ -7,7 +7,7 @@ import Scalaz._
 import spire.implicits._
 import spire.math.Interval
 
-// MGPSO, PMGPSO, and KnMGPSO
+// MGPSO, PMGPSO, RW-PMGPSO, and KnMGPSO
 object MGPSO {
 
   private def multiEval(envX: Benchmark)(
@@ -72,7 +72,7 @@ object MGPSO {
             } yield (w *: particle.velocity) + (c1 *: cog) + (c2 *: soc))
         } else {
           // NOTE !!! FOR KNMGPSO THE ARCHIVE AND ARCHIVE MANAGEMENT IS THE SAME BUT THE ARCHIVE GUIDE IS CHOSEN DIFFERENTLY!!!
-          // if MGPSO or PMGPSO
+          // if MGPSO or PMGPSO or RW-PMGPSO
           if (archive.get_R.head == -1.0 && archive.get_R.size == 1) {
             Step.liftR(
               RVar
@@ -153,8 +153,8 @@ object MGPSO {
                 .pow(c3, 2)) * (1 + w))) / (3 * Math.pow(c1 + (lambda * c2) + ((1 - lambda) * c3),
                                                          2)))))))
             RVar.pure(Some((counter, (w, c1, c2, c3))))
-          else if (counter > 10) RVar.pure(None)
-          else generator(counter + 1) // If generating random values that satisfy the stability criteria takes to long then return None
+          else if (counter > 10) RVar.pure(None) // If generating random values that satisfy the stability criteria takes to long then return None
+          else generator(counter + 1)
         case None =>
           sys.error("impossible")
       }
@@ -183,7 +183,7 @@ object MGPSO {
       archive.insert(particle)
     }
 
-  def mgpso_pmgpso_knmgpso(envX: Benchmark)
+  def pso(envX: Benchmark)
     : NonEmptyList[MGParticle] => MGParticle => StepS[Double, MGArchive, MGParticle] =
     collection => { x: MGParticle =>
       for {
