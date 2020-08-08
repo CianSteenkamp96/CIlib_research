@@ -1,10 +1,11 @@
 package cilib.research.simulation
 
 import java.io.File
+
 import cilib.exec.Runner.measureWithInfo
 import cilib.exec.{Progress, Runner}
 import cilib.io.csvSinkAppend
-import cilib.research.core.{Archive, Benchmark}
+import cilib.research.core.{Archive, Benchmark, GetIndices}
 import cilib.research.mgpso.MGParticle._
 import cilib.research.mgpso._
 import cilib.research.{MGArchive, _}
@@ -28,6 +29,7 @@ object Simulation {
             benchmark: Benchmark,
             iterations: Int,
             independentRuns: Int,
+            // For KnMGPSO only
             // desired_ratio_KPs_2_ND_sols => user defined parameter > 0 and < 1; represents the desired ratio of knee points to non-dominated solutions
             desired_ratio_KPs_2_ND_sols: Double = -1.0): IO[Unit] = {
     val measuredSimulations = (1 to independentRuns).map(runCount => {
@@ -40,13 +42,17 @@ object Simulation {
         if (algoName == "MGPSO")
           Archive.bounded[MGParticle](popSize, Dominates(benchmark), CrowdingDistance.mostCrowded)
         else if (algoName == "PMGPSO")
-          Archive.boundedPD[MGParticle](popSize, PartiallyDominates(benchmark), CrowdingDistance.mostCrowded, numObjectives)
+          Archive.boundedPD[MGParticle](
+            popSize,
+            PartiallyDominates(benchmark),
+            CrowdingDistance.mostCrowded,
+            numObjectives) // to know in which range to randomly choose objectives
         else if (algoName == "RW-PMGPSO")
           Archive.boundedRWPD[MGParticle](popSize,
-                                        PartiallyDominates(benchmark),
-                                        CrowdingDistance.mostCrowded,
-                                        List.fill(numObjectives)(0).toNel.get,
-                                        (0, 1, 2))
+                                          PartiallyDominates(benchmark),
+                                          CrowdingDistance.mostCrowded,
+                                          List.fill(numObjectives)(0).toNel.get,
+                                          GetIndices.get3IndicesPD(numObjectives)) // initially choose 3 objectives randomly
         else if (algoName == "KnMGPSO") {
           assert(desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1)
           // functions to avoid type errors ...
@@ -67,7 +73,8 @@ object Simulation {
             take2
           )
         } else
-          throw new Exception("The algorithm name should be \"MGPSO\", \"PMGPSO\", \"RW-PMGPSO\", or \"KnMGPSO\".")
+          throw new Exception(
+            "The algorithm name should be \"MGPSO\", \"PMGPSO\", \"RW-PMGPSO\", or \"KnMGPSO\".")
 
       val simulation: Process[Task, Progress[(MGArchive, NonEmptyList[MGParticle])]] = {
         Runner.foldStepS(
@@ -75,8 +82,7 @@ object Simulation {
           archive,
           rng,
           swarm,
-          Runner.staticAlgorithm(lambdaStrategy.name,
-                                 Iteration.syncS(MGPSO.pso(benchmark))),
+          Runner.staticAlgorithm(lambdaStrategy.name, Iteration.syncS(MGPSO.pso(benchmark))),
           benchmark.toStaticProblem,
           (x: NonEmptyList[MGParticle], _: Eval[NonEmptyList, Double]) => RVar.pure(x)
         )

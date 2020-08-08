@@ -67,7 +67,7 @@ sealed abstract class Archive[A] {
             if (l.size < limit.value && l.forall(x => !c(x, v))) {
               removeDominatedAndInsert(v)
             } else if (l.size == limit.value && l.forall(x => !c(x, v))) {
-              val selected = deletePolicy(l) // intellij complains here but I don't think it is an error ...
+              val selected = deletePolicy(l) // intellij complains here but it's not an error upon compilation
               NonEmpty[A](l.filterNot(x => x.equals(selected)), b, c).removeDominatedAndInsert(v)
             } else
               NonEmpty[A](l, b, c)
@@ -85,7 +85,7 @@ sealed abstract class Archive[A] {
             if (l.size < limit.value && l.forall(x => !c(x, v, indices))) {
               NonEmptyPD[A](v :: l, b, c, numObj)
             } else if (l.size == limit.value && l.forall(x => !c(x, v, indices))) {
-              val selected = deletePolicy(l) // intellij complains here but I don't think it is an error ...
+              val selected = deletePolicy(l) // intellij complains here but it's not an error upon compilation
               NonEmptyPD[A](v :: l.filterNot(x => x.equals(selected)), b, c, numObj)
             } else
               NonEmptyPD[A](l, b, c, numObj)
@@ -108,7 +108,7 @@ sealed abstract class Archive[A] {
                 updated_freqs_and_indices._2) // Note: freqs and indices updated only if insert successful
             } else if (l.size == limit.value && l.forall(x => !c(x, v, curr_indices))) {
               val updated_freqs_and_indices = update_freqs_and_indices(freqs)
-              val selected = deletePolicy(l) // intellij complains here but I don't think it is an error ...
+              val selected = deletePolicy(l) // intellij complains here but it's not an error upon compilation
               NonEmptyRWPD[A](
                 v :: l.filterNot(x => x.equals(selected)),
                 b,
@@ -136,7 +136,7 @@ sealed abstract class Archive[A] {
             if (l.size < limit.value && l.forall(x => !c(x, v)))
               removeDominatedAndInsert(v).update_KP_neighbourhoods
             else if (l.size == limit.value && l.forall(x => !c(x, v))) {
-              val selected = deletePolicy(l) // intellij complains here but I don't think it is an error ...
+              val selected = deletePolicy(l) // intellij complains here but it's not an error upon compilation
               NonEmptyKP[A](l.filterNot(x => x.equals(selected)),
                             b,
                             c,
@@ -228,7 +228,7 @@ sealed abstract class Archive[A] {
         throw new Exception("update_KP_neighbourhoods - Only relevant for KnMGPSO.")
       // this should never be the case below
       case EmptyKP(b, c, dr, _, _R, fl, lToNel, lTake2) =>
-        EmptyKP[A](b, c, dr, (1.0, 0.0), _R, fl, lToNel, lTake2) // starting values according to lit
+        EmptyKP[A](b, c, dr, (1.0, 0.0), _R, fl, lToNel, lTake2) // (1.0, 0.0) are starting values according to lit
       case NonEmptyKP(l, b, c, dr, pr_prKPs2ND, _, fl, lToNel, lTake2) =>
         val fitnessValues: List[List[Double]] = fl(l)
         val numObjectives: Int = fitnessValues.head.size
@@ -321,7 +321,7 @@ sealed abstract class Archive[A] {
 }
 
 object Archive {
-  ////////////////////////////////////////////////// MGPSO ARCHIVE ///////////////////////////////////////////////////////
+  ////////////////////////////////////////////////// MGPSO ARCHIVE //////////////////////////////////////////////////
   private final case class Empty[A](b: ArchiveBound, insertPolicy: (A, A) => Boolean)
       extends Archive[A]
 
@@ -349,7 +349,7 @@ object Archive {
     seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
   }
 
-  ////////////////////////////////////////////////// PMGPSO ARCHIVE ///////////////////////////////////////////////////////
+  ////////////////////////////////////////////////// PMGPSO ARCHIVE //////////////////////////////////////////////////
   // Empty Archive using Partial-Dominance as insertPolicy
   private final case class EmptyPD[A](b: ArchiveBound,
                                       insertPolicy: (A, A, (Int, Int, Int)) => Boolean,
@@ -387,7 +387,7 @@ object Archive {
     seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
   }
 
-  ////////////////////////////////////////////////// RW-PMGPSO ARCHIVE ///////////////////////////////////////////////////////
+  ////////////////////////////////////////////////// RW-PMGPSO ARCHIVE //////////////////////////////////////////////////
   // Empty Archive using Roulette Wheel Partial-Dominance as insertPolicy
   private final case class EmptyRWPD[A](b: ArchiveBound,
                                         insertPolicy: (A, A, (Int, Int, Int)) => Boolean,
@@ -433,7 +433,7 @@ object Archive {
     seeds.foldLeft(emptyArchive)((archive, seed) => archive.insert(seed))
   }
 
-  ////////////////////////////////////////////////// KnMGPSO ARCHIVE ///////////////////////////////////////////////////////
+  ////////////////////////////////////////////////// KnMGPSO ARCHIVE //////////////////////////////////////////////////
   // Empty Archive using Knee Points for archive guide selection
   private final case class EmptyKP[A](b: ArchiveBound,
                                       insertPolicy: (A, A) => Boolean,

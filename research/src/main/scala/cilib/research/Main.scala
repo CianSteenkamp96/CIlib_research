@@ -58,7 +58,7 @@ object Main extends SafeApp {
     val iterations: Int = 20 // #iterations per independent sample/run !!! NB HERE !!!
     val independentRuns: Int = 30 // #independent samples: 30 !!! NB HERE !!!
 //    val desired_ratio_KPs_2_ND_sols: Double = -1.0
-    val desired_ratio_KPs_2_ND_sols: Double = 0.25 // !!! NB HERE !!!
+    val desired_ratio_KPs_2_ND_sols: Double = 0.25 // !!! NB HERE !!! Problem dependent but rule of thumb is smaller as the number of objectives increases
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     val algoName: String = args(0) // algorithm name: 'MGPSO', 'PMGPSO', 'RW-PMGPSO', or 'KnMGPSO'
     assert(if (algoName != "KnMGPSO") desired_ratio_KPs_2_ND_sols == -1.0 else if (algoName == "KnMGPSO") desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1 else 1 == 1)

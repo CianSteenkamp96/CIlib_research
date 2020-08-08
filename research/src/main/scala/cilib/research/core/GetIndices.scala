@@ -8,6 +8,7 @@ import scala.collection.mutable.ListBuffer
 
 object GetIndices {
 
+  // returns 3 unique random objectives/indices
   // https://chrisalbon.com/scala/basics/random_integer_between_two_values/
   def get3IndicesPD(numObj: Int): (Int, Int, Int) = {
     val random = new scala.util.Random

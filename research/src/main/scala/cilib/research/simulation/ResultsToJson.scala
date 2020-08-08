@@ -8,15 +8,15 @@ import scalaz.Scalaz._
 object ResultsToJson {
 
   def finalArchive(run: Int, iteration: Int, archive: MGArchive, maxIterations: Int): String =
-//    if (iteration == maxIterations) { // save more (or less) data to file. Saving only final iteration here. Use % (modulus) for other iters.
-//      "{\"archive\": [" +
-      "{ \"prev_ratio\": " + archive.get_pr_prKPs2ND._1 + ", \"prev_ratio_KPs_2_ND_sols\": " + archive.get_pr_prKPs2ND._2 + ", \"archive\": [" +
+    if (iteration == maxIterations) { // save more (or less) data to file. Saving only final iteration here. Use % (modulus) for other iters.
+      "{\"archive\": [" +
+//      "{ \"prev_ratio\": " + archive.get_pr_prKPs2ND._1 + ", \"prev_ratio_KPs_2_ND_sols\": " + archive.get_pr_prKPs2ND._2 + ", \"archive\": [" +
         archive.values
           .map(x => "[" + x.pos.fitness.toList.mkString(",") + "]")
           .mkString(",") +
         "], \"iteration\": " + iteration +
         ", \"run\": " + run + " }\n"
-//    } else ""
+    } else ""
 
   def particlesJson(particles: NonEmptyList[MGParticle]): String =
     "\"swarm\": [" + particles
