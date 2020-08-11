@@ -21,7 +21,7 @@ object Main extends SafeApp {
     if (args.length != 4 && args.length != 5)
       throw new Exception(
         "Number of CL params needs to be at least 4 separated by spaces including: algoName (MGPSO, PMGPSO, RW-PMGPSO, or KnMGPSO) numObjs (3, 5, 8, 10, or 15) numDims (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) problemNum (Note this parameter is optional - if left unspecified the entire problem suite will be included. For WFG: 1, 2, ..., or 9; For DTLZ: 1, 2, ..., or 7).\n")
-    else if ((args(0) != "MGPSO" && args(0) != "PMGPSO" && args(0) != "RW-PMGPSO"&& args(0) != "KnMGPSO") ||
+    else if ((args(0) != "MGPSO" && args(0) != "PMGPSO" && args(0) != "RW-PMGPSO" && args(0) != "KnMGPSO") ||
              (args(1).toInt != 3 && args(1).toInt != 5 && args(1).toInt != 8 && args(1).toInt != 10 && args(
                1).toInt != 15) ||
              (args(2).toInt != 30 && args(2).toInt != 100 && args(2).toInt != 500 && args(2).toInt != 1000) ||
@@ -58,10 +58,15 @@ object Main extends SafeApp {
     val iterations: Int = 20 // #iterations per independent sample/run !!! NB HERE !!!
     val independentRuns: Int = 30 // #independent samples: 30 !!! NB HERE !!!
 //    val desired_ratio_KPs_2_ND_sols: Double = -1.0
-    val desired_ratio_KPs_2_ND_sols: Double = 0.25 // !!! NB HERE !!! Problem dependent but rule of thumb is smaller as the number of objectives increases
+    val desired_ratio_KPs_2_ND_sols
+      : Double = 0.25 // !!! NB HERE !!! Problem dependent but rule of thumb is smaller as the number of objectives increases
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     val algoName: String = args(0) // algorithm name: 'MGPSO', 'PMGPSO', 'RW-PMGPSO', or 'KnMGPSO'
-    assert(if (algoName != "KnMGPSO") desired_ratio_KPs_2_ND_sols == -1.0 else if (algoName == "KnMGPSO") desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1 else 1 == 1)
+    assert(
+      if (algoName != "KnMGPSO") desired_ratio_KPs_2_ND_sols == -1.0
+      else if (algoName == "KnMGPSO")
+        desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1
+      else 1 == 1)
     val numObj: Int = args(1).toInt // #obj: 3, 5, 8, 10, or 15
     val numDecisionVariables: Int = args(2).toInt
     // #dimensions in the decision space: 30, 100, 500, or 1000

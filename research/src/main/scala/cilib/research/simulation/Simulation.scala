@@ -48,11 +48,12 @@ object Simulation {
             CrowdingDistance.mostCrowded,
             numObjectives) // to know in which range to randomly choose objectives
         else if (algoName == "RW-PMGPSO")
-          Archive.boundedRWPD[MGParticle](popSize,
-                                          PartiallyDominates(benchmark),
-                                          CrowdingDistance.mostCrowded,
-                                          List.fill(numObjectives)(0).toNel.get,
-                                          GetIndices.get3IndicesPD(numObjectives)) // initially choose 3 objectives randomly
+          Archive.boundedRWPD[MGParticle](
+            popSize,
+            PartiallyDominates(benchmark),
+            CrowdingDistance.mostCrowded,
+            List.fill(numObjectives)(0).toNel.get,
+            GetIndices.get3IndicesPD(numObjectives)) // initially choose 3 objectives randomly
         else if (algoName == "KnMGPSO") {
           assert(desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1)
           // functions to avoid type errors ...
@@ -88,7 +89,6 @@ object Simulation {
         )
       }
       simulation.take(iterations).pipe(measurement(runCount, iterations))
-
     })
 
     val stream = merge
@@ -119,5 +119,4 @@ object Simulation {
     val fileWriter = new java.io.PrintWriter(new File(fileName))
     fileWriter.println("")
   }
-
 }

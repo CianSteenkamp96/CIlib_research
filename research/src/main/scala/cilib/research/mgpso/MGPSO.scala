@@ -80,7 +80,6 @@ object MGPSO {
                 .flatMap(archiveList => {
                   val tournament = archiveList.toList.take(3)
                   val archiveGuide: MGParticle = CrowdingDistance.leastCrowded(tournament)
-
                   for {
                     // calcVelocity generates random ctrl params satisfying the MGPSO stability criteria.
                     wc123 <- particle.lambda.value.map(list => satisfyStabilityCriteria(list.head))
@@ -109,6 +108,7 @@ object MGPSO {
                   // Note that due to the way that '.take' works and the fact that we 'shuffle' the archive before this is executed in MGPSO.scala, therefore, choosing 2 'new' sols for the crowding distance tournament will actually use the same tournament participants as taken here.
                   val archiveGuide: MGParticle = KneePoint
                     .kneePoint(archiveList, archive.get_R)
+                    ._1
                     .getOrElse(CrowdingDistance.leastCrowded(archiveList.toList.take(2)))
                   for {
                     // calcVelocity generates random ctrl params satisfying the MGPSO stability criteria.
@@ -153,7 +153,8 @@ object MGPSO {
                 .pow(c3, 2)) * (1 + w))) / (3 * Math.pow(c1 + (lambda * c2) + ((1 - lambda) * c3),
                                                          2)))))))
             RVar.pure(Some((counter, (w, c1, c2, c3))))
-          else if (counter > 10) RVar.pure(None) // If generating random values that satisfy the stability criteria takes to long then return None
+          else if (counter > 10)
+            RVar.pure(None) // If generating random values that satisfy the stability criteria takes to long then return None
           else generator(counter + 1)
         case None =>
           sys.error("impossible")
