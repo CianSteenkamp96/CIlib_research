@@ -128,8 +128,7 @@ lazy val publishSettings = Seq(
   //   else
   //     Some("releases" at nexus + "service/local/staging/deploy/maven2")
   // },
-  pomExtra := (
-    <developers>
+  pomExtra := <developers>
       {
         Seq(
           ("gpampara", "Gary Pamparà"),
@@ -145,7 +144,6 @@ lazy val publishSettings = Seq(
         }
       }
     </developers>
-  )
 )
 
 lazy val cilibSettings =
@@ -240,11 +238,7 @@ lazy val docSettings = Seq(
   scalacOptions in Tut ~= (_.filterNot(Set("-Ywarn-unused:imports", "-Ywarn-dead-code"))),
   git.remoteRepo := "git@github.com:cirg-up/cilib.git",
   ghpagesNoJekyll := true,
-  excludeFilter in ghpagesCleanSite :=
-    new FileFilter {
-      def accept(f: File) =
-        (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath
-    },
+  excludeFilter in ghpagesCleanSite := ((f: File) => (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath),
   siteSubdirName in SiteScaladoc := "api",
   unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(example),
   addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in SiteScaladoc),
@@ -377,5 +371,5 @@ lazy val io = project
     ))
 
 // for jar creation
-enablePlugins(PackPlugin)
-packMain := Map("mgpso_pmgpso_knmgpso" -> "cilib.research.Main")
+enablePlugins(PackPlugin) // sbt clean packArchive
+packMain := Map("mgpso_pmgpso_rw-pmgpso_knmgpso" -> "cilib.research.Main")

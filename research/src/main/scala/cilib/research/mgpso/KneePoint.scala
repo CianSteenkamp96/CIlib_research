@@ -48,7 +48,7 @@ object KneePoint {
 
       val tmp: List[List[Int]] = centres.map(
         ci =>
-          fitnessValues.zipWithIndex
+          centres
             .map(ai =>
               ai._1.indices.toList.map(i =>
                 if (math.abs(ai._1(i) - ci._1(i)) < R.toList(i)) ai._2 else -1))

@@ -11,6 +11,9 @@ object GetIndices {
   // returns 3 unique random objectives/indices
   // https://chrisalbon.com/scala/basics/random_integer_between_two_values/
   def get3IndicesPD(numObj: Int): (Int, Int, Int) = {
+
+    if (numObj == 3) return (0, 1, 2) // in case of 3-objectives => normal pareto-dominance - consider all 3 objectives and don't waste time vestai
+
     val random = new scala.util.Random
     // index in range of objectives (0 to numObj - 1)
     def randomInt: Int = 1 + random.nextInt((numObj - 1) + 1) - 1

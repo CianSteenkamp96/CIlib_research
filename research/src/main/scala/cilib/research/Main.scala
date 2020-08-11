@@ -8,7 +8,7 @@ import scalaz._
 import scalaz.effect.IO._
 import scalaz.effect.{IO, SafeApp}
 
-// To create jars see readmes/jar_creation on MSc HD
+// To create jars see phase1/readmes/jar_creation on MSc HD (sbt clean packArchive)
 
 // Intellij -> right click run main -> error -> click on Main (next to green hammer) -> edit configs -> add command line args to 'Program arguments:' -> apply -> run
 // command line args example => MGPSO 3 30 WFG
@@ -55,11 +55,10 @@ object Main extends SafeApp {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     val lambdaStrategy: String = "R" // lambda strategy: 'R', 'STD', 'LI', 'LD', 'RI', or 'RIJ'
-    val iterations: Int = 20 // #iterations per independent sample/run !!! NB HERE !!!
+    val iterations: Int = 2000 // #iterations per independent sample/run !!! NB HERE !!!
     val independentRuns: Int = 30 // #independent samples: 30 !!! NB HERE !!!
-//    val desired_ratio_KPs_2_ND_sols: Double = -1.0
-    val desired_ratio_KPs_2_ND_sols
-      : Double = 0.25 // !!! NB HERE !!! Problem dependent but rule of thumb is smaller as the number of objectives increases
+    val desired_ratio_KPs_2_ND_sols: Double = -1.0 // this should be uncommented for any algo other than KnMGPSO !!!
+//    val desired_ratio_KPs_2_ND_sols: Double = 0.25 // !!! NB HERE !!! Problem dependent but rule of thumb is smaller as the number of objectives increases
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     val algoName: String = args(0) // algorithm name: 'MGPSO', 'PMGPSO', 'RW-PMGPSO', or 'KnMGPSO'
     assert(
