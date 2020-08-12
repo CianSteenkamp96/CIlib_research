@@ -7,68 +7,83 @@ import cilib.research.simulation.Simulation
 import scalaz._
 import scalaz.effect.IO._
 import scalaz.effect.{IO, SafeApp}
+import spire.math.Interval
 
 // To create jars see phase1/readmes/jar_creation on MSc HD (sbt clean packArchive)
 
 // Intellij -> right click run main -> error -> click on Main (next to green hammer) -> edit configs -> add command line args to 'Program arguments:' -> apply -> run
-// command line args example => MGPSO 3 30 WFG
+
+// command line args example 1 => MGPSO STD 3 30 WFG1
+// command line args example 2 => KnMGPSO R 15 30 WFG 0.5
+// command line args example 3 => KnMGPSO RI 10 30 DTLZ7 0.2
 object Main extends SafeApp {
 
   override def run(args: ImmutableArray[String]): IO[Unit] = {
-    // These checks are specific for my research
-    // Not sure if asserts will be better
-    // Throwing exceptions not pure - maybe improve at a later stage
-    if (args.length != 4 && args.length != 5)
-      throw new Exception(
-        "Number of CL params needs to be at least 4 separated by spaces including: algoName (MGPSO, PMGPSO, RW-PMGPSO, or KnMGPSO) numObjs (3, 5, 8, 10, or 15) numDims (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) problemNum (Note this parameter is optional - if left unspecified the entire problem suite will be included. For WFG: 1, 2, ..., or 9; For DTLZ: 1, 2, ..., or 7).\n")
-    else if ((args(0) != "MGPSO" && args(0) != "PMGPSO" && args(0) != "RW-PMGPSO" && args(0) != "KnMGPSO") ||
-             (args(1).toInt != 3 && args(1).toInt != 5 && args(1).toInt != 8 && args(1).toInt != 10 && args(
-               1).toInt != 15) ||
-             (args(2).toInt != 30 && args(2).toInt != 100 && args(2).toInt != 500 && args(2).toInt != 1000) ||
-             (args(3) != "WFG" && args(3) != "DTLZ"))
-      throw new Exception(
-        "CL params needs to be: algoName (MGPSO, PMGPSO, RW-PMGPSO, or KnMGPSO) numObjs (3, 5, 8, 10, or 15) numDims (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) problemNum (Note this parameter is optional - if left unspecified the entire problem suite will be included. For WFG: 1, 2, ..., or 9; For DTLZ: 1, 2, ..., or 7).\n")
 
-    if (args.length == 5)
-      if (args(3) == "WFG") {
-        if (args(4).toInt != 1 && args(4).toInt != 2 && args(4).toInt != 3 && args(4).toInt != 4 && args(
-              4).toInt != 5 && args(4).toInt != 6 && args(4).toInt != 7 && args(4).toInt != 8 && args(
-              4).toInt != 9)
-          throw new Exception(
-            "The fifth CL parameter (the problem number), for WFG, should be: 1, 2, ..., or 9.\n")
-      } else if (args(3) == "DTLZ") {
-        if (args(4).toInt != 1 && args(4).toInt != 2 && args(4).toInt != 3 && args(4).toInt != 4 && args(
-              4).toInt != 5 && args(4).toInt != 6 && args(4).toInt != 7)
-          throw new Exception(
-            "The fifth CL parameter (the problem number), for DTLZ, should be: 1, 2, ..., or 7.\n")
-      } else if (args(3) == "ZDT") { // No chance of executing due to check above
-        if (args(4).toInt != 1 && args(4).toInt != 2 && args(4).toInt != 3 && args(4).toInt != 4 && args(
-              4).toInt != 6)
-          throw new Exception(
-            "The fifth CL parameter (the problem number), for ZDT, should be: 1, 2, 3, 4, or 6.\n")
-      } else
-        throw new Exception(
-          "Test suite should be one of the following: \"WFG\", \"DTLZ\", or \"ZDT\".\n")
-
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // This (or at least some of it) will be passed in through the CLI as CL params. Some fixed for convenience of research. But the code can easily be changed to set everything through the CL.
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HARDCODED CONFIG CHANGES HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    val lambdaStrategy: String = "R" // lambda strategy: 'R', 'STD', 'LI', 'LD', 'RI', or 'RIJ'
     val iterations: Int = 2000 // #iterations per independent sample/run !!! NB HERE !!!
     val independentRuns: Int = 30 // #independent samples: 30 !!! NB HERE !!!
-    val desired_ratio_KPs_2_ND_sols: Double = -1.0 // this should be uncommented for any algo other than KnMGPSO !!!
-//    val desired_ratio_KPs_2_ND_sols: Double = 0.25 // !!! NB HERE !!! Problem dependent but rule of thumb is smaller as the number of objectives increases
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    val algoName: String = args(0) // algorithm name: 'MGPSO', 'PMGPSO', 'RW-PMGPSO', or 'KnMGPSO'
-    assert(
-      if (algoName != "KnMGPSO") desired_ratio_KPs_2_ND_sols == -1.0
-      else if (algoName == "KnMGPSO")
-        desired_ratio_KPs_2_ND_sols > 0 && desired_ratio_KPs_2_ND_sols < 1
-      else 1 == 1)
-    val numObj: Int = args(1).toInt // #obj: 3, 5, 8, 10, or 15
-    val numDecisionVariables: Int = args(2).toInt
-    // #dimensions in the decision space: 30, 100, 500, or 1000
+
+    // These checks are specific for my research
+    // asserts vs throwing exceptions w.r.t functional programming? Not purely functional - but good enough for my purposes here.
+    // Throwing exceptions not pure - maybe improve at a later stage
+    if (args.length != 5 && args.length != 6)
+      throw new Exception(
+        "Number of CL params needs to be at least 5 separated by spaces including: algoName (MGPSO, PMGPSO, RW-PMGPSO, or KnMGPSO) archiveCoeffUpdateStrategy (STD, R, RI, or RIJ) numObjs (3, 5, 8, 10, or 15) numDecisionVariables (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) | problemSuiteAndproblemNum (WFG1, ..., or WFG9 or DTLZ1, ..., or DTLZ7) desiredRatioKP2ND (*** For KnMGPSO only ***; any value in range (0, 1)).\n")
+
+    // simulation specs passed via command line args
+    val algoName: String = args(0)
+
+    if (algoName == "KnMGPSO" && args.size != 6)
+      throw new Exception(
+        "CL params needs to be: algoName (MGPSO, PMGPSO, RW-PMGPSO, or KnMGPSO) archiveCoeffUpdateStrategy (STD, R, RI, or RIJ) numObjs (3, 5, 8, 10, or 15) numDecisionVariables (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) | problemSuiteAndproblemNum (WFG1, ..., or WFG9 or DTLZ1, ..., or DTLZ7) desiredRatioKP2ND (*** For KnMGPSO only ***; any value in range [0, 1]).\n")
+
+    val archiveCoeffUpdateStrategy: String = args(1)
+    val numObj: Int = args(2).toInt
+    val numDecisionVariables: Int = args(3).toInt
+    val problem: String = args(4)
+    val desiredRatioKP2ND: Double = if (args.size == 6) args(5).toDouble else -1.0
+
+    if (algoName != "KnMGPSO" && desiredRatioKP2ND != -1.0)
+      throw new Exception("desiredRatioKP2ND only relevant for KnMGPSO.\n")
+    else if (algoName == "KnMGPSO" && desiredRatioKP2ND <= 0 || desiredRatioKP2ND >= 1)
+      throw new Exception("desiredRatioKP2ND should be specified in range (0, 1).\n")
+
+    if ((algoName != "MGPSO" && algoName != "PMGPSO" && algoName != "RW-PMGPSO" && algoName != "KnMGPSO") ||
+        (archiveCoeffUpdateStrategy != "STD" && archiveCoeffUpdateStrategy != "R" && archiveCoeffUpdateStrategy != "RI" && archiveCoeffUpdateStrategy != "RIJ") ||
+        (numObj != 3 && numObj != 5 && numObj != 8 && numObj != 10 && numObj != 15) ||
+        (numDecisionVariables != 30 && numDecisionVariables != 100 && numDecisionVariables != 500 && numDecisionVariables != 1000) ||
+        (!problem.contains("WFG") && !problem.contains("DTLZ")))
+      throw new Exception(
+        "CL params needs to be: algoName (MGPSO, PMGPSO, RW-PMGPSO, or KnMGPSO) archiveCoeffUpdateStrategy (STD, R, RI, or RIJ) numObjs (3, 5, 8, 10, or 15) numDecisionVariables (30, 100, 500, or 1000) problemSuite (WFG or DTLZ) | problemSuiteAndproblemNum (WFG1, ..., or WFG9 or DTLZ1, ..., or DTLZ7) desiredRatioKP2ND (*** For KnMGPSO only ***; any value in range [0, 1]).\n")
+
+    if (problem.contains("WFG")) {
+      if (problem.length > 4)
+        throw new Exception("The problem number for WFG should be: 1, 2, ..., or 9.\n") // DTLZ or DTLZ1 (DTLZ or DTLZ<problem number>)
+      if (problem.length == 4)
+        if (problem.reverse.head.toString.toInt != 1 && problem.reverse.head.toString.toInt != 2 && problem.reverse.head.toString.toInt != 3 && problem.reverse.head.toString.toInt != 4 && problem.reverse.head.toString.toInt != 5 && problem.reverse.head.toString.toInt != 6 && problem.reverse.head.toString.toInt != 7 && problem.reverse.head.toString.toInt != 8 && problem.reverse.head.toString.toInt != 9)
+          throw new Exception("The problem number for WFG should be: 1, 2, ..., or 9.\n")
+    } else if (problem.contains("DTLZ")) {
+      if (problem.length > 5)
+        throw new Exception("The problem number for DTLZ should be: 1, 2, ..., or 7.\n") // DTLZ or DTLZ1 (DTLZ or DTLZ<problem number>)
+      if (problem.length == 5)
+        if (problem.reverse.head.toString.toInt != 1 && problem.reverse.head.toString.toInt != 2 && problem.reverse.head.toString.toInt != 3 && problem.reverse.head.toString.toInt != 4 && problem.reverse.head.toString.toInt != 5 && problem.reverse.head.toString.toInt != 6 && problem.reverse.head.toString.toInt != 7)
+          throw new Exception("The problem number for DTLZ should be: 1, 2, ..., or 7.\n")
+    } else
+      throw new Exception("Test suites supported: \"WFG\" or \"DTLZ\".\n")
+
+    val benchmarkSuiteName: String =
+      if (problem.contains("WFG")) "WFG"
+      else if (problem.contains("DTLZ")) "DTLZ"
+      else throw new Exception("Test suites supported: \"WFG\" or \"DTLZ\".\n") // problem suite: 'WFG' or 'DTLZ'
+
+    val problemNum: Int =
+      if (problem.contains("WFG") && problem.length == 4 || problem
+            .contains("DTLZ") && problem.length == 5) problem.reverse.head.toString.toInt
+      else -1
+
     val subswarms3obj: NonEmptyList[Int] = NonEmptyList(51, 51, 51) // 153
     val subswarms5obj: NonEmptyList[Int] = NonEmptyList(25, 25, 25, 25, 26) // 126
     val subswarms8obj: NonEmptyList[Int] = NonEmptyList(19, 19, 19, 19, 19, 19, 19, 20) // 156
@@ -76,7 +91,7 @@ object Main extends SafeApp {
       : NonEmptyList[Int] = NonEmptyList(11, 11, 11, 11, 11, 11, 11, 11, 11, 11) // 110
     val subswarms15obj: NonEmptyList[Int] =
       NonEmptyList(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9) // 135
-    val problemNum: Int = if (args.length == 5) args(4).toInt else -1
+
     // NonEmptyList of sub swarm divisions;
     // number of objectives equal to the size of the swarms NonEmptyList,
     // that is, each element in the NEL represents a sub swarm's size
@@ -87,54 +102,38 @@ object Main extends SafeApp {
       else if (numObj == 10) subswarms10obj
       else if (numObj == 15) subswarms15obj
       else throw new Exception("Number of objectives supported: 3, 5, 8, 10 or 15.\n")
-    val benchmarkSuiteName: String = args(3) // problem suite: 'WFG' or 'DTLZ'
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    val numObjectives: Int = swarms.size // #dimensions in the objective/solution space
+    assert(numObj == swarms.size)
 
-    val benchmarkSuite =
+    val benchmarkSuite: BenchmarkSuite =
       if (benchmarkSuiteName == "WFG")
-        BenchmarkSuite.wfgObj(numObjectives, numDecisionVariables, swarms, problemNum)
+        BenchmarkSuite.wfgObj(numObj, numDecisionVariables, swarms, problemNum)
       else if (benchmarkSuiteName == "DTLZ")
-        BenchmarkSuite.dtlzObj(numObjectives, numDecisionVariables, swarms, problemNum)
-      // No chance of executing due to check at top
-      else if (benchmarkSuiteName == "ZDT") // Checks at top does not allow ZDT or 2 objectives to be specified.
-        if (numObjectives != 2)
-          throw new Exception("ZDT is bi-objective.\n")
-        else
-          BenchmarkSuite.zdtObj(swarms, problemNum) // ZDT is only bi-objective and has its own specific number of decision variables
+        BenchmarkSuite.dtlzObj(numObj, numDecisionVariables, swarms, problemNum)
       else
-        throw new Exception(
-          "Test suite should be one of the following: \"WFG\", \"DTLZ\", or \"ZDT\".\n")
+        throw new Exception("Test suites supported: \"WFG\" or \"DTLZ\".\n")
 
-    val simulationsIO = benchmarkSuite.benchmarks.traverse1(b => {
-      val bounds = b.bounds
-      val ls =
-        if (lambdaStrategy == "STD")
+    val simulationsIO: IO[NonEmptyList[Unit]] = benchmarkSuite.benchmarks.traverse1(b => {
+      val bounds: NonEmptyList[Interval[Double]] = b.bounds
+      val ls: LambdaStrategy =
+        if (archiveCoeffUpdateStrategy == "STD")
           LambdaStrategy.Standard(bounds)
-        else if (lambdaStrategy == "LI")
-          LambdaStrategy.LinearIncreasing(bounds)
-        else if (lambdaStrategy == "LD")
-          LambdaStrategy.LinearDecreasing(bounds)
-        else if (lambdaStrategy == "R")
+        else if (archiveCoeffUpdateStrategy == "R")
           LambdaStrategy.Random(bounds)
-        else if (lambdaStrategy == "RI")
+        else if (archiveCoeffUpdateStrategy == "RI")
           LambdaStrategy.RandomI(bounds)
-        else if (lambdaStrategy == "RIJ")
-          LambdaStrategy.RandomIJ(bounds)
         else
           throw new Exception(
-            "Lambda strategy can only be one of the following: \"STD\", \"LI\", \"LD\", \"R\", \"RI\", or \"RIJ\".\n")
+            "Archive balance coefficient update strategies supported: \"STD\", \"R\", or \"RI\".\n")
 
       Simulation.runIO(algoName,
-                       numObjectives,
+                       numObj,
                        numDecisionVariables,
                        ls,
                        b,
                        iterations,
                        independentRuns,
-                       desired_ratio_KPs_2_ND_sols)
+                       desiredRatioKP2ND)
     })
 
     for {
