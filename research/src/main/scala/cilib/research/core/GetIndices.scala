@@ -6,6 +6,12 @@ import Scalaz._
 import cilib.{RNG, RVar}
 import scala.collection.mutable.ListBuffer
 
+// Note w.r.t the RW-PMGPSO:
+// Uniform random selection: This implies that each objective has the same probability of being selected, i.e. 1/n_k, where n_k is the number of objectives. So, given a sufficient number of applications of the random selection, the frequency of selection of each objective will be the same for all of the objectives.
+// Roulette wheel selection will make sense if you base the probability on same performance information. So, in terms of sub-objectives, if a sub-objective was selected and it resulted in an improvement of performance, then increase the selection probability for that sub-objective, while others will have to reduce 9sum of probabilities has to be equal to 1). So the probability of selection is performance of the sub-objective divided by the sum of performances for the other objectives. This assumes maximization. The issue is now which performance measure to use: Hypervolume? If you do not make use of such a performance-based approach to the Roulette-wheel selection, then it does not make sense.
+// If what you have done is not similar to what I have mentioned under point 2, then my suggestion is rather to stick to the standard approach. Otherwise you will have to spend more time on developing an appropriate performance-based probability approach.
+// i.e. the roulette wheel partial-dominance implementation (the RW-PMGPSO algorithm) needs some work to be a viable option.
+
 object GetIndices {
 
   // returns 3 unique random objectives/indices
