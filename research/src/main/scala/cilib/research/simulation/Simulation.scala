@@ -43,7 +43,7 @@ object Simulation {
       val swarm = createCollection(benchmark, lambdaStrategy.evalValue(rng))
       val popSize: Int Refined Positive = refineV[Positive](
         benchmark.controlParameters.swarmSizes
-          .foldLeft(0)(_ + _)).right.get // archive limit set equal to total population size by default
+                .foldLeft(0)(_ + _)).right.get // archive limit set equal to total population size by default
       val archive =
         if (algoName == "MGPSO")
           Archive.bounded[MGParticle](popSize, Dominates(benchmark), CrowdingDistance.mostCrowded)
@@ -98,9 +98,9 @@ object Simulation {
     })
 
     val stream = merge
-      .mergeN(24)(Process.emitAll(measuredSimulations))
-      .to(csvSinkAppend[String](new File(
-        algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + numObjectives + "obj")))
+            .mergeN(24)(Process.emitAll(measuredSimulations))
+            .to(csvSinkAppend[String](new File(
+              algoName + "." + lambdaStrategy.name + "." + benchmark.name + "." + numDecisionVariables + "D." + numObjectives + "obj")))
 
     for {
       _ <- IO(clearFile(
